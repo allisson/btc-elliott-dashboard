@@ -53,6 +53,8 @@ All code, identifiers, comments, docs and UI strings are in English.
 │   ├── spec.md           # this file
 │   ├── roadmap.md
 │   └── adr/
+├── scripts/
+│   └── record-snapshots.ts  # records the real Binance fixtures (§11)
 ├── src/
 │   ├── main.tsx
 │   ├── App.tsx            # orchestrator: data, analysis, UI state
@@ -78,6 +80,7 @@ All code, identifiers, comments, docs and UI strings are in English.
 │       │   ├── setups.ts
 │       │   ├── risk.ts
 │       │   ├── confluence.ts
+│       │   ├── analysis.ts    # one timeframe at candle close (§6.5)
 │       │   └── __fixtures__/
 │       └── format.ts      # price, %, R:R and Copy Setup text
 ```
@@ -707,4 +710,7 @@ export interface Ticker {
     (m = 3…8), per setup (trigger met and not met), each in both directions.
   - **One real kline snapshot** per timeframe, recorded from Binance as JSON and used as a
     regression test (pivot count, primary label, signal levels).
+  - **Raw Binance payloads** (klines, 24h ticker, stream kline and ticker messages) in
+    `__fixtures__/binance/`, recorded by `bun scripts/record-snapshots.ts`; the REST and stream
+    parsers are tested against them.
 - Done means: `bun run test` green, `bun run build` clean, `tsc --noEmit` clean.
