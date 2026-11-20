@@ -29,7 +29,6 @@ The user reads the signal and acts manually. The dashboard never places orders.
 - Alerts (Telegram, Discord, push, email).
 - Symbols other than BTCUSDT.
 - Machine-learning confidence models.
-- Deployment. v1 runs locally; a static deploy is an optional last roadmap phase.
 
 ---
 
@@ -43,6 +42,7 @@ The user reads the signal and acts manually. The dashboard never places orders.
 | Chart | TradingView Lightweight Charts **v5**, exact version pinned in `package.json` |
 | Icons | Lucide React |
 | Tests | Vitest, run with `bun run test` |
+| Hosting | Cloudflare Pages at `https://btc-elliott.allisson.dev`, deployed by a `v*` tag (see [`deployment.md`](./deployment.md)) |
 
 All code, identifiers, comments, docs and UI strings are in English.
 
@@ -53,6 +53,7 @@ All code, identifiers, comments, docs and UI strings are in English.
 ├── docs/
 │   ├── spec.md           # this file
 │   ├── roadmap.md
+│   ├── deployment.md     # release workflow, headers, Cloudflare and GitHub setup
 │   └── adr/
 ├── scripts/
 │   └── record-snapshots.ts  # records the real Binance fixtures (§11)

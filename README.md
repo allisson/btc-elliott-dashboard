@@ -5,6 +5,8 @@ counts into a Primary and an Alternative Scenario, and turns them into 1x (unlev
 signals with position sizing and multi-timeframe confluence. Live data comes from Binance's public
 REST and WebSocket APIs, with no API key. It never places orders.
 
+Live at **<https://btc-elliott.allisson.dev>**.
+
 ![Dashboard on the 4H timeframe: confluence strip, Elliott chart with confirmed and projected waves, signal panel](docs/screenshots/desktop.png)
 
 > **Not financial advice.** The dashboard shows what an algorithm reads in the price. You decide
@@ -54,7 +56,8 @@ bun dev              # http://localhost:5173
 | `bunx tsc --noEmit` | Type-check only |
 | `bun scripts/record-snapshots.ts` | Re-record the real Binance fixtures used by the tests |
 
-The build is a static site: `dist/` can be served from any static host.
+The build is a static site: `dist/` can be served from any static host. A tag `v<version>` on
+`main` deploys it to Cloudflare Pages ([deployment](docs/deployment.md)).
 
 ## How it works
 
@@ -198,6 +201,8 @@ icons, Vitest, Bun.
 - [Spec](docs/spec.md): source of truth for behaviour, formulas and types.
 - [Roadmap](docs/roadmap.md): the build phases and their "done when" checks.
 - [Glossary](GLOSSARY.md): the domain terms (Pivot, Count, Scenario, Setup, Signal, Confluence…).
+- [Deployment](docs/deployment.md): the release workflow, the security headers and the Cloudflare
+  and GitHub setup.
 - [ADRs](docs/adr/): [Vite SPA instead of Next.js](docs/adr/0001-vite-spa-instead-of-nextjs.md),
   [no synthetic data at runtime](docs/adr/0002-no-synthetic-data-at-runtime.md).
 

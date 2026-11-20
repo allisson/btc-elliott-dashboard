@@ -146,8 +146,11 @@ invalid.
 only 1h; cutting the network shows `OFFLINE` and hides signals; restoring it backfills and
 resumes.
 
-## Phase 10 (optional): Static deploy
+## Phase 10: Static deploy
 
-- Publish `dist/` to a static host.
+- `.github/workflows/release.yml`: a `v*` tag on `main` tests, builds, deploys `dist/` to
+  Cloudflare Pages and checks the served files against the build.
+- `public/_headers`: CSP limited to the Binance REST and WebSocket bases, `nosniff`, cache rules.
+- Cloudflare and GitHub setup recorded in [`deployment.md`](./deployment.md).
 
 **Done when** the deployed URL loads live data with no console errors.
