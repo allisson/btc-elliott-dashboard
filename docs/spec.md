@@ -248,13 +248,18 @@ Projections run from the count's last point. `W1 = P1 − P0` (signed) and `A = 
 | (3) | `P4' = P3 − 0.382·(P3 − P2)`; `P5' = P4' + 1.0·W1` |
 | (4) | `P5' = P4 + 1.0·W1` |
 | (5) | `PA' = P5 − 0.382·(P5 − P0)` (range 0.382–0.5); `PB' = PA' + 0.5·(P5 − PA')`; `PC' = PB' − 1.0·(P5 − PA')` (range 1.0–1.618) |
-| (A) | `PB' = PA + 0.5·(P5 − PA)`; `PC' = PB' + 1.0·A` |
+| (A) | `PB' = PA + 0.5·(P5 − PA)`; `PC' = PB' + 1.0·A` (range `PB' + [1.0, 1.618]·A`) |
 | (B) | `PC' = PB + 1.0·A` (range `PB + [1.0, 1.618]·A`) |
 
-When Rule 2 is pending (§4.3), `|P5' − P4|` is capped at `len(W3)`.
+When Rule 2 is pending (§4.3), `|P5' − P4|` is capped at `len(W3)`, using `P4'` when P4 is
+projected (last point (3)).
 
-Projected times: each projected leg lasts as many candles as the mean leg duration of the confirmed
-count, rounded, and at least 1. Times are `lastPoint.time + n × timeframeSeconds`.
+Projected times: the mean leg duration of the confirmed count is
+`(lastPoint.index − firstPoint.index) / (m − 1)` candles, rounded, and at least 1. The first
+projected leg lasts `max(mean, elapsed + 1)` candles, where `elapsed` is the number of closed
+candles since the last point (`lastClosedIndex − lastPoint.index`), so it never lands on a candle
+already past; each later leg lasts the mean. A point `n` candles after the last point has time
+`lastPoint.time + n × timeframeSeconds`.
 
 ### 4.6 Tunables
 
@@ -270,7 +275,8 @@ Per timeframe:
 
 1. Score every valid candidate (§4.4).
 2. **Primary Scenario** = highest score. **Alternative Scenario** = second highest. Every
-   candidate ends at a different label, so the two always differ in structure.
+   candidate ends at a different label, so the two always differ in structure. On equal scores
+   the count with more points (larger m) ranks first.
 3. Confidence:
    - Both exist and `pP + pA > 0`: Primary = `pP / (pP + pA) × 100`, Alternative = `100 − Primary`.
    - Both exist and `pP + pA = 0`: 50 / 50.
@@ -294,9 +300,22 @@ Per timeframe:
    Breach means `s·(price − invalidation) ≤ 0` for the first two rows and
    `s·(price − P5) > 0` for the last.
 
-6. Each scenario carries a **thesis**: a template sentence built from its label, direction, ratios
-   and invalidation (e.g. "Bullish impulse; Wave 2 retraced 0.62 of Wave 1; Wave 3 in progress
-   toward 1.618 at <price>; invalid below <price>.").
+6. Each scenario carries a **thesis**: a template sentence built from its last point, impulse
+   direction, measured ratio, next projected point and invalidation. Written for a bullish
+   impulse; a bearish one says `Bearish` and swaps `below ↔ above`:
+
+   | Last point | Thesis |
+   | :-- | :-- |
+   | (2) | `Bullish impulse; Wave 2 retraced <w2> of Wave 1; Wave 3 in progress toward 1.618 at <P3'>; invalid below <P0>.` |
+   | (3) | `Bullish impulse; Wave 3 extended <w3> of Wave 1; Wave 4 forming toward 0.382 at <P4'>; invalid below <P1>.` |
+   | (4) | `Bullish impulse; Wave 4 retraced <w4> of Wave 3; Wave 5 in progress toward 1.0 at <P5'>; invalid below <P1>.` |
+   | (5) | `Bullish impulse complete; Wave 5 extended <w5> of Wave 1; Correction A in progress toward 0.382 at <PA'>; invalid above <P5>.` |
+   | (A) | `Bullish impulse complete; Wave A retraced <a> of the impulse; Wave B in progress toward 0.5 at <PB'>; invalid above <P5>.` |
+   | (B) | `Bullish impulse complete; Wave B retraced <b> of Wave A; Wave C in progress toward 1.0 at <PC'>; invalid above <P5>.` |
+
+   Ratios and prices use 2 decimals; the Fibonacci targets are the §4.5 projection constants.
+   When Rule 2 is pending at (4), the Wave 5 clause reads `Wave 5 in progress toward <P5'>
+   (capped at Wave 3 length)`. At (3) the thesis names only P4', so it is unchanged.
 
 ---
 

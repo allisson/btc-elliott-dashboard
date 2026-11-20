@@ -60,12 +60,31 @@ The highest-scoring scenario on a timeframe.
 _Avoid_: primary count, main count
 
 **Alternative Scenario**:
-The best scenario whose structure or direction differs from the Primary Scenario; the thesis that
-holds if the primary is invalidated.
+The second-highest-scoring scenario on a timeframe; the reading that holds if the Primary Scenario
+is invalidated.
 _Avoid_: alternate count, fallback
 
+**Confidence**:
+The weight of a scenario relative to the other one on the same timeframe, from 0 to 100.
+_Avoid_: probability, likelihood
+
+**Scenario direction**:
+The direction of the wave in progress, i.e. the next expected move; it opposes the impulse's
+direction during corrective waves.
+_Avoid_: trend, bias
+
+**Projected point**:
+A wave point not yet formed, placed by Fibonacci ratios from the count's last point. The chain of
+projected points is the count's **projection**.
+_Avoid_: forecast, prediction, target (for the point itself)
+
+**Thesis**:
+The one-sentence reading of a scenario: what has formed, what is in progress and where it dies.
+_Avoid_: summary, narrative
+
 **Invalidation price**:
-The price whose breach violates an Elliott rule and kills the scenario.
+The price whose breach kills the scenario: past it, an Elliott rule breaks or the count's
+structure no longer holds.
 _Avoid_: stop (when speaking of a scenario rather than a signal)
 
 **Neutral timeframe**:
@@ -85,8 +104,8 @@ _Avoid_: setup (for the instance), trade, recommendation
 
 **Signal status**:
 Active when the trigger is met and the trade is still worth taking; Watching when a scenario
-exists but entry is not (or no longer) worth it; Invalidated when price breached the stop loss
-before the next candle close.
+exists but entry is not (or no longer) worth it; Invalidated when price breached the stop loss or
+the scenario's invalidation price before the next candle close.
 _Avoid_: state, phase
 
 **Risk per trade**:
