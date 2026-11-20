@@ -73,6 +73,9 @@ export const SETUP_3B_TP2_EXTENSION = 1.618;
 // §6.4
 export const MIN_RR1 = 1;
 
+// §6.4: below this confidence a scenario shows as 0% (§9.5) and has no signal
+export const MIN_SIGNAL_CONFIDENCE = 0.5;
+
 // §8: smallest agreeing group that counts as Mixed Market (Strong = every timeframe agrees)
 export const CONFLUENCE_MIN_MIXED = 2;
 

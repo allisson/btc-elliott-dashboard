@@ -134,6 +134,7 @@ and Copy Setup. The **target** is TP1 while it is ahead, then TP2.
 - **ACTIVE**: trigger met and `rr ≥ 1` towards the target.
 - **WATCHING**: anything else (trigger not met, or `rr < 1` towards the target).
 - Past both targets the signal is spent: the panel reads "No setup: both targets passed".
+- A scenario shown as 0% confidence keeps its count but has no signal: "No setup: 0% confidence".
 - **INVALIDATED**: since the last candle close, price touched the invalidation price. It stays so until the next close re-analyses the timeframe.
 
 ### 5. Position size

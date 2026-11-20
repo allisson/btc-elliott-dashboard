@@ -1,6 +1,6 @@
 // What the header, confluence strip and signal panel show (spec §7, §9.2, §9.3, §9.5). Pure; the
 // components only render it.
-import { FIB_DECIMALS, RISK_DEFAULTS, TIMEFRAMES } from '../config.ts';
+import { FIB_DECIMALS, MIN_SIGNAL_CONFIDENCE, RISK_DEFAULTS, TIMEFRAMES } from '../config.ts';
 import type {
   Confluence,
   Direction,
@@ -26,6 +26,9 @@ const label = (timeframe: TimeframeAnalysis['timeframe']) => TIMEFRAMES.find((t)
 export const selectedRank = (analysis: TimeframeAnalysis, rank: Rank): Rank =>
   rank === 'alternative' && !analysis.alternative ? 'primary' : rank;
 
+// §6.4: a scenario shown as 0% confidence keeps its count but has no signal.
+export const ZERO_CONFIDENCE = 'No setup: 0% confidence';
+
 export interface ScenarioView {
   scenario: Scenario | null; // null = Neutral
   signal: Signal | null; // null = no setup
@@ -39,6 +42,9 @@ export function scenarioView(analysis: TimeframeAnalysis, rank: Rank, price: num
   const scenario = rank === 'primary' ? analysis.primary : analysis.alternative;
   if (!scenario) return { scenario: null, signal: null, rules: [], noSetup: null };
   const levels = rank === 'primary' ? analysis.primaryLevels : analysis.alternativeLevels;
+  if (levels && scenario.confidence < MIN_SIGNAL_CONFIDENCE) {
+    return { scenario, signal: null, rules: liveRules(scenario, price, openCandle), noSetup: ZERO_CONFIDENCE };
+  }
   const signal = levels && evaluateSignal(scenario, levels, analysis.timeframe, price, openCandle, riskPercent);
   // §6.4: past both targets the signal is spent; an Invalidated one stays visible.
   const spent = signal !== null && signal.status !== 'INVALIDATED' && signal.rr2 <= 0;
