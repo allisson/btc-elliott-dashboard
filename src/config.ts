@@ -30,6 +30,9 @@ export const K = 8;
 export const MIN_COUNT_PIVOTS = 3;
 export const MAX_COUNT_PIVOTS = 8;
 
+// §4.3: decimals for prices and wave lengths in rule check details
+export const DETAIL_DECIMALS = 2;
+
 // §4.4
 export const TOLERANCE = 0.15;
 export const FIB_TARGETS = {

@@ -29,6 +29,24 @@ A labelling of consecutive pivots as waves (0–5 of an impulse, A–C of a corr
 partial, whose last point is the latest confirmed pivot.
 _Avoid_: wave count, reading, labelling
 
+**Anchor**:
+The pivot a count starts from, labelled (0); a trough anchors a bullish count, a peak a bearish one.
+_Avoid_: origin, start pivot
+
+**Candidate count**:
+A count generated from an anchor and not yet checked against the rules; the ones that pass are
+valid counts.
+_Avoid_: hypothesis, option
+
+**Grade**:
+How close one measured ratio sits to its nearest Fibonacci target, from 0 (beyond the tolerance)
+to 1 (on target).
+_Avoid_: fit, match
+
+**Score**:
+The mean of a count's grades, from 0 to 1; it ranks counts into scenarios.
+_Avoid_: rating, probability
+
 **Wave in progress**:
 The leg running from a count's last point to the current price.
 _Avoid_: current wave, live wave
