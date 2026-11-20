@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_TIMEFRAME, RISK_STORAGE_KEY, TIMEFRAMES } from '../config.ts';
 import { confluence } from '../lib/engine/confluence.ts';
 import { confluenceBadge, parseStoredRisk, riskFromInputs, scenarioView, selectedRank, stripCard, type Rank, type RiskInputs } from '../lib/panels.ts';
+import type { OpenCandle } from '../lib/engine/setups.ts';
 import type { Candle, Ticker, Timeframe, TimeframeAnalysis } from '../types.ts';
 import { ConfluenceStrip } from './ConfluenceStrip.tsx';
 import { ElliottChart } from './ElliottChart.tsx';
@@ -12,7 +13,8 @@ import { SignalPanel } from './SignalPanel.tsx';
 
 export interface TimeframeData {
   analysis: TimeframeAnalysis;
-  candles: Candle[]; // closed candles and the open one, oldest first
+  closed: Candle[]; // oldest first
+  open: Candle | null; // null between a close and the next candle's first kline (§3.3)
 }
 
 interface DashboardProps {
@@ -20,6 +22,9 @@ interface DashboardProps {
   ticker: Ticker;
   pausedSince: number | null; // ms since epoch of the last real update, while the stream is down
 }
+
+// §6.4: breaches since the last close; with no open candle yet, only the live price.
+const breachProbe = (open: Candle | null, price: number): OpenCandle => open ?? { high: price, low: price };
 
 const ALL_PRIMARY = Object.fromEntries(TIMEFRAMES.map((t) => [t.id, 'primary'])) as Record<Timeframe, Rank>;
 
@@ -55,12 +60,13 @@ export function Dashboard({ data, ticker, pausedSince }: DashboardProps) {
   const agreement = useMemo(() => confluence(analyses), [analyses]);
   const cards = TIMEFRAMES.map((t) => ({
     timeframe: t.id,
-    card: stripCard(data[t.id].analysis, price, data[t.id].candles.at(-1)!, paused),
+    card: stripCard(data[t.id].analysis, price, breachProbe(data[t.id].open, price), paused),
   }));
 
-  const { analysis, candles } = data[focused];
+  const { analysis, closed, open } = data[focused];
+  const candles = useMemo(() => (open ? [...closed, open] : closed), [closed, open]);
   const rank = selectedRank(analysis, ranks[focused]);
-  const view = scenarioView(analysis, rank, price, candles.at(-1)!);
+  const view = scenarioView(analysis, rank, price, breachProbe(open, price));
   const risk = riskFromInputs(riskInputs);
 
   return (

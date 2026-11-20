@@ -18,6 +18,11 @@ Refetching every timeframe's history after the live stream reconnects, so no clo
 missed while it was down.
 _Avoid_: resync, reload, catch-up
 
+**Paused**:
+The state, while the live stream is down or backfill has not finished, in which every signal is
+hidden because the data is stale.
+_Avoid_: stale mode, frozen, disconnected
+
 ## Wave structure
 
 **Pivot**:

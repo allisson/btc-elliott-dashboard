@@ -24,6 +24,7 @@ export const BINANCE_REST_BASE = 'https://api.binance.com/api/v3';
 export const BINANCE_WS_BASE = 'wss://stream.binance.com:9443/stream';
 export const KLINES_LIMIT = 1000;
 export const RECONNECT_DELAY_MS = 3_000;
+export const STREAM_STALE_MS = 10_000; // no message for this long = dropped (the ticker arrives ~1/s)
 
 // §4.2
 export const K = 8;
