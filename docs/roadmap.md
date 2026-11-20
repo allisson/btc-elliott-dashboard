@@ -83,6 +83,20 @@ and capped; and Copy Setup output matches a golden string.
 **Done when** the parsers are tested against recorded payloads, the snapshot regression test
 passes, and the pivot counts are written in this file.
 
+**Measured** on the snapshots recorded 2026-11-20 13:38 UTC (closed candles only):
+
+| TF | Closed candles | Pivots | Valid counts (m, score) | Primary | Alternative |
+| :-- | --: | --: | :-- | :-- | :-- |
+| 1h | 999 | 68 | m=3 0.33 | (2) bearish, 33% | unavailable |
+| 4h | 999 | 66 | m=3 0.97, m=7 0.20 | (2) bearish, 83% | (A) bearish, 17% |
+| 1d | 999 | 162 | m=5 0.18, m=3 0.00 | (4) bearish, 100% | (2) bearish, 0% |
+| 1w | 483 | 185 | none | Neutral | — |
+
+- Every timeframe has well over `K + 1 = 9` pivots; the 1w returns its whole history (483 weeks,
+  fewer than `limit=1000`), so no threshold change is needed.
+- §4.4 short-count bias: it shows on 4h, where a one-ratio m=3 count (0.97) outranks an m=7
+  count (0.20); on 1d the longer count wins. Reported only; scoring is unchanged.
+
 ## Phase 7: Chart
 
 - `ElliottChart.tsx`: candles, volume, confirmed and projected wave lines with markers, signal

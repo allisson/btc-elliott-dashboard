@@ -3,6 +3,21 @@
 A personal read-only dashboard for the BTC/USDT pair that counts Elliott waves across four
 timeframes and turns that reading into unleveraged trade signals.
 
+## Market data
+
+**Closed candle**:
+A candle whose interval has ended; only closed candles are analysed.
+_Avoid_: kline (outside the raw Binance payload), bar, final candle
+
+**Open candle**:
+The latest candle of a timeframe, still forming; it is drawn but never analysed.
+_Avoid_: kline (outside the raw Binance payload), live candle, current candle
+
+**Backfill**:
+Refetching every timeframe's history after the live stream reconnects, so no closed candle is
+missed while it was down.
+_Avoid_: resync, reload, catch-up
+
 ## Wave structure
 
 **Pivot**:
