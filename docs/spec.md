@@ -82,6 +82,7 @@ All code, identifiers, comments, docs and UI strings are in English.
 │       │   ├── confluence.ts
 │       │   ├── analysis.ts    # one timeframe at candle close (§6.5)
 │       │   └── __fixtures__/
+│       ├── live.ts        # pure reducer: REST loads and stream messages → live state (§3.3, §3.4)
 │       ├── chart.ts       # pure mapping: scenario and signal → chart lines, markers, price lines (§9.4)
 │       └── format.ts      # price, %, R:R and Copy Setup text
 ```
@@ -108,6 +109,8 @@ All code, identifiers, comments, docs and UI strings are in English.
     `[4] close`, `[5] volume`, all as `number`.
   - The last kline returned is still open: it is drawn on the chart but **excluded from analysis**.
 - `GET /ticker/24hr?symbol=BTCUSDT` on load for the header stats.
+- The stream (§3.3) opens **before** these calls, so no candle close falls between the REST
+  response and the first stream message.
 
 ### 3.3 WebSocket (live)
 
@@ -117,23 +120,35 @@ All code, identifiers, comments, docs and UI strings are in English.
   - `t === lastCandle.time`: replace the open candle.
   - `t > lastCandle.time`: append a new open candle.
   - `x === true`: the candle is closed. Move it into the analysed set and **recompute that
-    timeframe's analysis** (§4–§7), then recompute confluence (§8).
+    timeframe's analysis** (§4–§7), then recompute confluence (§8). Until the next candle's first
+    kline arrives, the timeframe has no open candle.
+  - `t ≤` the last closed candle's time: ignored (already in the analysed set).
+- While the REST load or a backfill is in flight, kline messages are buffered and applied, in
+  order and by the rules above, on top of the REST history once it lands. Ticker messages are
+  applied at once.
 - Ticker payload (`data`): `c` last price, `p` change, `P` change %, `h` high, `l` low, `v` volume.
   Each ticker update refreshes the header and every price-dependent signal metric (§6.5) without
   recomputing counts.
 - Reconnect: on close or error, retry every 3 s. After reconnecting, refetch the REST klines for
-  all four timeframes (backfill), then re-analyse them.
+  all four timeframes (backfill), then re-analyse them. A failed backfill is retried every 3 s
+  while the stream stays up.
+- Drop detection: a cut network does not always close the socket. The stream is treated as dropped
+  when no message has arrived for `STREAM_STALE_MS` (10 s; the ticker arrives about once a
+  second), and at once when the browser fires `offline`.
 
 ### 3.4 Failure handling (no synthetic data)
 
 Synthetic candles never exist at runtime ([ADR 0002](./adr/0002-no-synthetic-data-at-runtime.md)).
 
 - **Initial REST failure** (network, HTTP 4xx/5xx, rate limit): full-screen error state with the
-  failing endpoint, the HTTP status if any, and a Retry button. No chart, no signals.
+  first failing endpoint, the HTTP status if any, and a Retry button. No chart, no signals. Retry
+  restarts the whole load: the stream and the five REST calls.
 - **WebSocket down** after a successful load: the header badge switches from `LIVE` to `OFFLINE`
-  and shows the time of the last real update. The chart keeps the last real data. Every signal is
-  hidden and replaced with "Signals paused: data stale since HH:mm UTC" until the stream is back
-  and backfill completes.
+  and shows the time of the last real update: the last stream message received, or the REST load
+  if none arrived. The chart keeps the last real data. Every signal is hidden and replaced with
+  "Signals paused: data stale since HH:mm UTC" until the stream is back and backfill completes;
+  the badge stays `OFFLINE` until then too. Ticker messages that arrive meanwhile still update
+  the header price.
 
 ---
 
@@ -388,7 +403,8 @@ Evaluated on every ticker update for a scenario that has a setup:
 
 A **breach** since the last close is checked against the live price and the extremes of that
 timeframe's open candle (its high and low cover every trade since the close, including those before
-a reload). The stop loss is breached at `price ≤ SL` for LONG and `price ≥ SL` for SHORT
+a reload). Between a close and the next candle's first kline there is no open candle, and only the
+live price is checked. The stop loss is breached at `price ≤ SL` for LONG and `price ≥ SL` for SHORT
 (inclusive, like the (2)–(4) invalidations, so `risk` never reaches 0 on a live signal). The
 invalidation price uses the §5.5 conditions.
 - **ACTIVE**: not invalidated, trigger met, price strictly between SL and TP1, and `rr1 ≥ 1`.

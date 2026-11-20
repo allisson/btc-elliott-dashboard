@@ -1,6 +1,7 @@
 // Binance public combined stream (spec §3.3): candle and ticker updates, reconnect every 3 s.
-// Backfill is the caller's job: `onReconnect` fires when a dropped connection opens again.
-import { BINANCE_WS_BASE, RECONNECT_DELAY_MS, SYMBOL, TIMEFRAMES } from '../../config.ts';
+// A socket is dropped on close or error, after STREAM_STALE_MS without a message, or when the browser
+// goes offline. Backfill is the caller's job: `onReconnect` fires when a dropped connection opens again.
+import { BINANCE_WS_BASE, RECONNECT_DELAY_MS, STREAM_STALE_MS, SYMBOL, TIMEFRAMES } from '../../config.ts';
 import type { Candle, Ticker, Timeframe } from '../../types.ts';
 
 export type StreamMessage =
@@ -63,49 +64,77 @@ export interface StreamDeps {
   createSocket(url: string): SocketLike;
   setTimeout(fn: () => void, ms: number): unknown;
   clearTimeout(handle: unknown): void;
+  onOffline(fn: () => void): () => void; // returns the unsubscribe
 }
 
 const browserDeps: StreamDeps = {
   createSocket: (url) => new WebSocket(url),
   setTimeout: (fn, ms) => setTimeout(fn, ms),
   clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
+  onOffline: (fn) => {
+    window.addEventListener('offline', fn);
+    return () => window.removeEventListener('offline', fn);
+  },
 };
 
 export function connectStream(handlers: StreamHandlers, deps: StreamDeps = browserDeps): { close(): void } {
   let stopped = false;
   let opened = false;
   let timer: unknown = null;
+  let watchdog: unknown = null;
   let socket: SocketLike;
+  let dropCurrent = () => {};
+
+  const stopWatchdog = () => {
+    if (watchdog !== null) deps.clearTimeout(watchdog);
+    watchdog = null;
+  };
 
   const connect = () => {
     const s = deps.createSocket(STREAM_URL);
     let dropped = false;
-    // Close and error can both fire for one failure; retry once.
+    const restartWatchdog = () => {
+      stopWatchdog();
+      watchdog = deps.setTimeout(drop, STREAM_STALE_MS);
+    };
+    // Close and error can both fire for one failure, and a forced drop is followed by a late close:
+    // retry once.
     const drop = () => {
       if (dropped || stopped) return;
       dropped = true;
+      stopWatchdog();
+      s.close();
       handlers.onClose?.();
       timer = deps.setTimeout(connect, RECONNECT_DELAY_MS);
     };
     s.onopen = () => {
+      if (dropped) return;
+      restartWatchdog();
       handlers.onOpen?.();
       if (opened) handlers.onReconnect?.();
       opened = true;
     };
     s.onmessage = (ev) => {
+      if (dropped) return;
+      restartWatchdog();
       const message = parseStreamMessage(String(ev.data));
       if (message) handlers.onMessage(message);
     };
     s.onclose = drop;
     s.onerror = drop;
     socket = s;
+    dropCurrent = drop;
+    restartWatchdog();
   };
 
+  const unsubscribeOffline = deps.onOffline(() => dropCurrent());
   connect();
   return {
     close() {
       stopped = true;
       if (timer !== null) deps.clearTimeout(timer);
+      stopWatchdog();
+      unsubscribeOffline();
       socket.close();
     },
   };

@@ -64,6 +64,7 @@ class FakeSocket implements SocketLike {
 function harness() {
   const sockets: FakeSocket[] = [];
   const timers: { fn: () => void; ms: number; cleared: boolean }[] = [];
+  const offline: { fn: (() => void) | null } = { fn: null };
   const events: string[] = [];
   const messages: StreamMessage[] = [];
   const conn = connectStream(
@@ -87,9 +88,18 @@ function harness() {
       clearTimeout: (t) => {
         (t as (typeof timers)[number]).cleared = true;
       },
+      onOffline: (fn) => {
+        offline.fn = fn;
+        return () => {
+          offline.fn = null;
+        };
+      },
     },
   );
-  return { sockets, timers, events, messages, conn };
+  // Live timers by role: the 3 s reconnect and the 10 s watchdog.
+  const pending = (ms: number) => timers.filter((t) => t.ms === ms && !t.cleared);
+  const retries = () => timers.filter((t) => t.ms === 3_000);
+  return { sockets, timers, events, messages, conn, offline, pending, retries };
 }
 
 describe('connectStream', () => {
@@ -111,10 +121,9 @@ describe('connectStream', () => {
     h.sockets[0].open();
     h.sockets[0].drop();
     expect(h.events).toEqual(['open', 'close']);
-    expect(h.timers).toHaveLength(1);
-    expect(h.timers[0].ms).toBe(3_000);
+    expect(h.retries()).toHaveLength(1);
 
-    h.timers[0].fn();
+    h.retries()[0].fn();
     expect(h.sockets).toHaveLength(2);
     h.sockets[1].open();
     expect(h.events).toEqual(['open', 'close', 'open', 'reconnect']);
@@ -123,9 +132,9 @@ describe('connectStream', () => {
   it('keeps retrying while the connection fails', () => {
     const h = harness();
     h.sockets[0].drop();
-    h.timers[0].fn();
+    h.retries()[0].fn();
     h.sockets[1].drop();
-    h.timers[1].fn();
+    h.retries()[1].fn();
     h.sockets[2].open();
     expect(h.sockets).toHaveLength(3);
     expect(h.events).toEqual(['close', 'close', 'open']); // first successful open: no backfill
@@ -136,9 +145,75 @@ describe('connectStream', () => {
     h.sockets[0].open();
     h.sockets[0].drop();
     h.conn.close();
-    expect(h.timers[0].cleared).toBe(true);
+    expect(h.retries()[0].cleared).toBe(true);
     h.sockets[0].drop();
-    expect(h.timers).toHaveLength(1);
+    expect(h.retries()).toHaveLength(1);
     expect(h.sockets[0].closed).toBe(true);
+  });
+
+  it('close() also stops the watchdog and the offline listener', () => {
+    const h = harness();
+    h.sockets[0].open();
+    h.conn.close();
+    expect(h.pending(10_000)).toHaveLength(0);
+    expect(h.offline.fn).toBeNull();
+  });
+});
+
+describe('connectStream drop detection (§3.3)', () => {
+  it('10 s without a message drops the socket and schedules the retry', () => {
+    const h = harness();
+    h.sockets[0].open();
+    expect(h.pending(10_000)).toHaveLength(1);
+    h.pending(10_000)[0].fn();
+    expect(h.events).toEqual(['open', 'close']);
+    expect(h.sockets[0].closed).toBe(true);
+    expect(h.pending(3_000)).toHaveLength(1);
+  });
+
+  it('every message restarts the 10 s window', () => {
+    const h = harness();
+    h.sockets[0].open();
+    const first = h.pending(10_000)[0];
+    h.sockets[0].send(wsTicker);
+    expect(first.cleared).toBe(true);
+    expect(h.pending(10_000)).toHaveLength(1);
+    expect(h.events).toEqual(['open']);
+  });
+
+  it('a socket that never opens is dropped by the watchdog too', () => {
+    const h = harness();
+    h.pending(10_000)[0].fn();
+    expect(h.events).toEqual(['close']);
+    expect(h.pending(3_000)).toHaveLength(1);
+  });
+
+  it('the browser going offline drops at once', () => {
+    const h = harness();
+    h.sockets[0].open();
+    h.offline.fn!();
+    expect(h.events).toEqual(['open', 'close']);
+    expect(h.sockets[0].closed).toBe(true);
+    expect(h.pending(10_000)).toHaveLength(0);
+    expect(h.pending(3_000)).toHaveLength(1);
+  });
+
+  it('offline while already waiting to retry does nothing', () => {
+    const h = harness();
+    h.sockets[0].drop();
+    h.offline.fn!();
+    expect(h.events).toEqual(['close']);
+    expect(h.retries()).toHaveLength(1);
+  });
+
+  it('a dropped socket that still delivers is ignored, and its late close is not a second drop', () => {
+    const h = harness();
+    h.sockets[0].open();
+    h.pending(10_000)[0].fn();
+    h.sockets[0].send(wsTicker);
+    h.sockets[0].drop();
+    expect(h.messages).toHaveLength(0);
+    expect(h.events).toEqual(['open', 'close']);
+    expect(h.retries()).toHaveLength(1);
   });
 });
