@@ -15,7 +15,8 @@ A personal, read-only dashboard for BTC/USDT on Binance. It:
 3. Projects the waves still to come.
 4. Maps the scenario to a **Setup** and emits a 1x **Signal** (entry, stop loss, TP1, TP2, R:R,
    status), mirrored for both directions.
-5. Sizes the position from the user's capital and risk per trade.
+5. Commits the user's whole capital (1x) with the stop loss at the risk per trade from the entry
+   (§7, [ADR 0003](adr/0003-stop-loss-at-risk-per-trade.md)).
 6. Summarises the four timeframes into a **Confluence** reading.
 7. Streams live data from Binance's public REST and WebSocket APIs, with no API key.
 
@@ -240,8 +241,7 @@ per scenario, whether or not it has a setup:
 | (4), Rule 2 pending | beyond `P4 + s·len(W3)` (Wave 5 already longer than Wave 3) | Rule 2 |
 | (5), (A), (B) | invalidation price P5 | none: the impulse is not over, no rule broke |
 
-A stop-loss breach that does not breach the invalidation price (possible only in Setup 3b) marks no
-rule. The Rule 2 breach changes only the checklist: the scenario's invalidation price stays P1, and
+The Rule 2 breach changes only the checklist: the scenario's invalidation price stays P1, and
 past that level the price is already beyond TP2, so the signal is Watching.
 
 Detail strings show prices and wave lengths with 2 decimals, e.g.
@@ -293,7 +293,7 @@ already past; each later leg lasts the mean. A point `n` candles after the last 
 ### 4.6 Tunables
 
 `src/config.ts` holds every constant: thresholds (§3.1), `K = 8`, `TOLERANCE = 0.15`, the Fibonacci
-targets and ranges, setup trigger ranges (§6.2), SL multipliers, `RSI_PERIOD = 14`,
+targets and ranges, setup trigger ranges (§6.2), `RSI_PERIOD = 14`,
 `MIN_RR1 = 1`, the 3 s reconnect delay, and the risk defaults and limits (§7).
 
 ---
@@ -362,15 +362,15 @@ then Wilder smoothing. When the average loss is 0, RSI is 100; when both average
 ### 6.2 Setups
 
 The scenario's last point picks the setup. Its trigger decides between Active and Watching (§6.4).
-Formulas are written for `s = +1`. For `s = −1`, mirror the direction and swap multipliers
-`0.995 ↔ 1.005` and `1.008 ↔ 0.992`.
+Formulas are written for `s = +1`. For `s = −1`, mirror the direction. The setup fixes the targets;
+the stop loss is not a setup level: it sits at the risk per trade from the entry (§6.3, §7).
 
-| Setup | Last point | Trigger | Direction | Stop loss | TP1 | TP2 |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| 1: Wave 2→3 | (2) | W2 retracement ∈ [0.382, 0.886] | LONG | `P0 × 0.995` | `P1` | `P3'` (1.618) |
-| 2: Wave 4→5 | (4) | W4 retracement ∈ [0.236, 0.5] and Rule 3 holds | LONG | `P1 × 0.995` | `P3` | `P5'` |
-| 3a: Wave 5 exhaustion | (5) | RSI divergence (§6.1) | SHORT | `P5 × 1.008` | `P4` | `PA'` |
-| 3b: Wave B→C | (B) | B retracement ∈ [0.45, 0.668] (0.5–0.618 ± 0.05) | SHORT | `PB × 1.008` | `PA` | `PB + 1.618·A` |
+| Setup | Last point | Trigger | Direction | TP1 | TP2 |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 1: Wave 2→3 | (2) | W2 retracement ∈ [0.382, 0.886] | LONG | `P1` | `P3'` (1.618) |
+| 2: Wave 4→5 | (4) | W4 retracement ∈ [0.236, 0.5] and Rule 3 holds | LONG | `P3` | `P5'` |
+| 3a: Wave 5 exhaustion | (5) | RSI divergence (§6.1) | SHORT | `P4` | `PA'` |
+| 3b: Wave B→C | (B) | B retracement ∈ [0.45, 0.668] (0.5–0.618 ± 0.05) | SHORT | `PA` | `PB + 1.618·A` |
 
 - Any setup: if TP2 is not beyond TP1 in the trade's direction, swap them so that TP1 is always
   the nearer target. In practice this happens in Setup 3a (`PA'` not beyond `P4`) and Setup 2
@@ -388,39 +388,41 @@ Formulas are written for `s = +1`. For `s = −1`, mirror the direction and swap
 `entry` = current price (live ticker).
 
 ```
-risk     = |entry − SL|
 t        = +1 for LONG, −1 for SHORT
+risk     = entry × risk% / 100          # risk per trade (§7)
+SL       = entry − t·risk
 rr1      = t·(TP1 − entry) / risk
 rr2      = t·(TP2 − entry) / risk
 Δ%(x)    = (x − entry) / entry × 100
 ```
 
-R:R is signed: it is `≤ 0` once the price has reached or passed the target. Such a target is
+The stop loss moves with the entry: it is where to put the stop when entering now, so hitting it
+loses exactly the risk per trade (§7). R:R is the distance to the target in units of the risk per
+trade. R:R is signed: it is `≤ 0` once the price has reached or passed the target. Such a target is
 **passed**: it holds no reward left and the UI drops it (§6.4, §9.4–§9.6).
 
 ### 6.4 Status
 
 Evaluated on every ticker update for a scenario that has a setup:
 
-- **INVALIDATED**: since the last candle close, the live price has breached the stop loss or the
-  scenario's invalidation price. It stays Invalidated until the next close re-analyses the timeframe.
+- **INVALIDATED**: since the last candle close, the live price has breached the scenario's
+  invalidation price. It stays Invalidated until the next close re-analyses the timeframe. The
+  stop loss moves with the entry (§6.3), so it is never breached and never invalidates.
 
 A **breach** since the last close is checked against the live price and the extremes of that
 timeframe's open candle (its high and low cover every trade since the close, including those before
 a reload). Between a close and the next candle's first kline there is no open candle, and only the
-live price is checked. The stop loss is breached at `price ≤ SL` for LONG and `price ≥ SL` for SHORT
-(inclusive, like the (2)–(4) invalidations, so `risk` never reaches 0 on a live signal). The
-invalidation price uses the §5.5 conditions.
-- **ACTIVE**: not invalidated, trigger met, price on the right side of SL, and `rr ≥ 1` towards the
+live price is checked. The invalidation price uses the §5.5 conditions.
+- **ACTIVE**: not invalidated, trigger met, and `rr ≥ 1` towards the
   **target**: TP1 while it is ahead, TP2 once TP1 is passed (§6.3).
 - **WATCHING**: any other case, e.g. trigger not met or `rr < 1` towards the target.
 
 Past both targets the signal is spent: unless Invalidated, the scenario is shown as having no
 setup, with "No setup: both targets passed" (§9.3, §9.5).
 
-An Invalidated signal is dead: the metrics derived from `entry` (Δ%, R:R, position size, risk)
-are not shown, because with the price at or past the stop `risk` tends to zero and R:R explodes.
-The levels stay visible for reference (§9.5) and Copy Setup is disabled (§9.6). A Watching signal
+An Invalidated signal is dead: the count it trades no longer holds, so the metrics derived from
+`entry` (stop loss, Δ%, R:R, position size, risk) are not shown. The targets stay visible for
+reference (§9.5) and Copy Setup is disabled (§9.6). A Watching signal
 keeps its R:R visible: it explains why entry is not worth it.
 
 ### 6.5 What updates when
@@ -428,7 +430,7 @@ keeps its R:R visible: it explains why entry is not worth it.
 | Event | Recomputed |
 | :-- | :-- |
 | Kline closed (`x = true`) | pivots, counts, scenarios, setup, status, confluence for that timeframe |
-| Ticker update | entry, Δ%, R:R, status, position size for every timeframe |
+| Ticker update | entry, stop loss, Δ%, R:R, status, position size for every timeframe |
 | Open-candle kline update | chart candle only |
 
 ---
@@ -445,19 +447,18 @@ Inputs in the Signal Panel, shared by every timeframe and scenario and stored in
 
 An out-of-range value falls back to the default; it is not clamped (risk 15 becomes 1, not 10).
 
-The stop loss always stays at the setup's level. The position is sized to it:
+The position is always the whole capital (1x), and the risk per trade sets the stop loss: it sits
+`risk%` from the entry (§6.3), so hitting it loses `risk%` of the position
+([ADR 0003](adr/0003-stop-loss-at-risk-per-trade.md)):
 
 ```
+position_usd   = capital
+position_btc   = capital / entry
 risk_usd       = capital × risk% / 100
-stop_distance  = |entry − SL| / entry
-position_usd   = min(risk_usd / stop_distance, capital)       # 1x: never above capital
-position_btc   = position_usd / entry
-actual_risk    = position_usd × stop_distance
-capped         = position_usd == capital
 ```
 
-When capped, the panel shows the actual risk (below the configured one) with "(capped by
-capital)".
+With the defaults, 1000 USDT with a stop 1% away: hitting it loses 10 USDT. The stop no longer
+marks the count's structure; the scenario's invalidation price does (§5.5, §9.4).
 
 ---
 
@@ -567,11 +568,12 @@ and `PAUSED` while signals are paused (§9.0).
   visible range stays.
 - Price lines, hidden when `Trade 1x` is off, the scenario has no setup, the signal is
   Invalidated (§6.4) or signals are paused (§3.4): `ENTRY 1x` (solid
-  blue), `STOP LOSS` (dashed red), `TP1 [R:R 1:x.x]` (dashed green), `TP2 [R:R 1:x.x]` (dotted
-  dark green); a passed target (§6.3) has no line and no legend entry. They are created once and updated in place on each ticker (`ENTRY 1x` moves with
-  the price, the R:R in the TP titles changes), never recreated per tick. Their prices are part of
+  blue), `STOP LOSS` (dashed red), `INVALIDATION` (dashed purple, the scenario's invalidation
+  price), `TP1 [R:R 1:x.x]` (dashed green), `TP2 [R:R 1:x.x]` (dotted dark green); a passed target (§6.3) has no line and no legend entry. They are created once and updated in place on each ticker (`ENTRY 1x` moves with
+  the price and `STOP LOSS` with it, the R:R in the TP titles changes), never recreated per tick. Their prices are part of
   the price scale's autoscale, so no visible level falls off the pane. `ENTRY 1x` blue is
-  `#3b82f6` and TP2 dark green `#0f7a5a` (`CHART_COLORS` in `config.ts`).
+  `#3b82f6`, `INVALIDATION` purple `#a855f7` and TP2 dark green `#0f7a5a` (`CHART_COLORS` in
+  `config.ts`).
 - The candlestick series' own last-price line is hidden while `ENTRY 1x` is visible (same price)
   and shown otherwise.
 - Resizes with its container (`autoSize`).
@@ -584,7 +586,7 @@ and `PAUSED` while signals are paused (§9.0).
   `BTC/USDT · 4H · Primary Scenario (83%) · Wave 3 in progress` (the last segment is the
   scenario's wave in progress, §4.2); on a Neutral timeframe, `BTC/USDT · 1W · Neutral`.
 - Line legend at the end of the context bar: a swatch and name for each line currently drawn,
-  and only those: `Confirmed`, `Projected`, `Entry`, `Stop`, `TP1`, `TP2`. While paused the bar
+  and only those: `Confirmed`, `Projected`, `Entry`, `Stop`, `Invalidation`, `TP1`, `TP2`. While paused the bar
   is unchanged except that the trade entries drop out with their lines; the stale notice lives
   only in the overlay.
 
@@ -600,8 +602,8 @@ Sections top to bottom, in this order:
 - Signal card: direction badge (`LONG 1x` / `SHORT 1x`), setup name, status, "1x, no leverage"
   notice, **Copy Setup** button. Metric grid: Entry, Stop Loss (Δ%), TP1 (Δ%, R:R), TP2 (Δ%, R:R), each dropped once passed (§6.3),
   Position (USDT and BTC), Risk (USDT and % of capital). A red box states the invalidation
-  condition. When Invalidated (§6.4): Stop Loss, TP1 and TP2 show their prices only, without Δ%
-  or R:R; Entry, Position and Risk show `—`; Copy Setup is disabled; the red box stays.
+  condition. When Invalidated (§6.4): TP1 and TP2 show their prices only, without Δ% or R:R;
+  Entry, Stop Loss, Position and Risk show `—`; Copy Setup is disabled; the red box stays.
   Copy Setup writes the §9.6 text to the clipboard; the button then reads `Copied` (or
   `Copy failed` when the clipboard refuses) for `COPY_FEEDBACK_MS` in `config.ts`. `Generated` is
   the time of the click.
@@ -627,7 +629,7 @@ Not available for an Invalidated signal (§6.4). Plain text, no markdown. Prices
 BTC with 5 decimals, USDT amounts with 2 decimals. Numbers have no thousands separator
 (`97234.50`), so they paste into an order form; the UI groups them (`97,234.50`). Signs use the
 ASCII `+` and `-`. `<invalidation text>` is the scenario's invalidation reason (§5.5), verbatim.
-`<conf>` has no decimals (`62%`); `<r>`, the actual risk as % of capital, has 2 (`1.00%`).
+`<conf>` has no decimals (`62%`); `<r>`, the risk per trade, has 2 (`1.00%`).
 
 ```
 BTC/USDT · 4H · LONG 1x · Setup 1 (Wave 2→3)
@@ -643,7 +645,7 @@ Generated: <YYYY-MM-DD HH:mm UTC>
 Not financial advice. 1x, no leverage.
 ```
 
-When capped, the Risk line ends with ` (capped by capital)`. A passed target (§6.3) has no line.
+A passed target (§6.3) has no line.
 
 ---
 
@@ -722,7 +724,6 @@ export interface SignalLevels {   // fixed at candle close
   setup: SetupId;
   side: 'LONG' | 'SHORT';
   triggerMet: boolean;
-  stopLoss: number;
   takeProfit1: number;
   takeProfit2: number;
 }
@@ -730,6 +731,7 @@ export interface SignalLevels {   // fixed at candle close
 export interface Signal extends SignalLevels {  // recomputed on every ticker update
   timeframe: Timeframe;
   entry: number;
+  stopLoss: number;            // entry ∓ risk per trade (§7): it moves with the entry
   rr1: number;
   rr2: number;
   status: 'ACTIVE' | 'WATCHING' | 'INVALIDATED';
@@ -752,9 +754,8 @@ export interface RiskSettings {
 export interface PositionSize {
   positionUsd: number;
   positionBtc: number;
-  actualRiskUsd: number;
-  actualRiskPercent: number;
-  capped: boolean;
+  riskUsd: number;
+  riskPercent: number;
 }
 
 export interface Confluence {

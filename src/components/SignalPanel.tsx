@@ -80,7 +80,7 @@ function CopyButton({ build }: { build: (() => string | null) | null }) {
 }
 
 function SignalCard({ scenario, signal, risk }: { scenario: Scenario; signal: Signal; risk: RiskSettings }) {
-  const position = positionSize(risk, signal.entry, signal.stopLoss);
+  const position = positionSize(risk, signal.entry);
   const build = () => copySetupText({ signal, scenario, position, capital: risk.capital, generatedAt: Date.now() });
 
   return (

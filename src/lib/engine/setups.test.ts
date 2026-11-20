@@ -6,18 +6,14 @@ import { buildLevels, deltaPercent, evaluateSignal, liveRules, noSetupReason, pr
 import * as fx from './__fixtures__/counts.ts';
 import * as sx from './__fixtures__/setups.ts';
 
-// Bullish trades are written by hand; the bearish side mirrors prices (p → MIRROR − p), flips the
-// trade side and uses the mirrored SL multipliers.
+// Bullish trades are written by hand; the bearish side mirrors prices (p → MIRROR − p) and flips the
+// trade side.
 const sides = [
-  {
-    side: 'bullish', s: 1, flip: (list: Pivot[]) => list, flipCloses: (c: number[]) => c, map: (x: number) => x,
-    below: 0.995, above: 1.008, withImpulse: 'LONG', against: 'SHORT',
-  },
-  {
-    side: 'bearish', s: -1, flip: fx.mirror, flipCloses: sx.mirrorCloses, map: (x: number) => fx.MIRROR - x,
-    below: 1.005, above: 0.992, withImpulse: 'SHORT', against: 'LONG',
-  },
+  { side: 'bullish', s: 1, flip: (list: Pivot[]) => list, flipCloses: (c: number[]) => c, map: (x: number) => x, withImpulse: 'LONG', against: 'SHORT' },
+  { side: 'bearish', s: -1, flip: fx.mirror, flipCloses: sx.mirrorCloses, map: (x: number) => fx.MIRROR - x, withImpulse: 'SHORT', against: 'LONG' },
 ] as const;
+
+const RISK = 1; // % per trade: the stop sits 1% from the entry (§7)
 
 const lastIndex = (c: Count) => c.points[c.points.length - 1].index!;
 const scenarioFrom = (list: Pivot[]): Scenario => {
@@ -26,15 +22,14 @@ const scenarioFrom = (list: Pivot[]): Scenario => {
 };
 const candle = (price: number) => ({ high: price, low: price });
 
-describe.each(sides)('buildLevels ($side)', ({ s, flip, flipCloses, map, below, above, withImpulse, against }) => {
+describe.each(sides)('buildLevels ($side)', ({ flip, flipCloses, map, withImpulse, against }) => {
   const scenarioOf = (prices: readonly number[]) => scenarioFrom(flip(fx.pivots('trough', prices)));
   const levelsOf = (prices: readonly number[]) => buildLevels(scenarioOf(prices), [])!;
 
   describe('Setup 1: Wave 2→3', () => {
-    it('meets the trigger with W2 0.6 and sets SL, TP1 = P1, TP2 = P3′', () => {
+    it('meets the trigger with W2 0.6 and sets TP1 = P1, TP2 = P3′', () => {
       const levels = levelsOf([100, 200, 140]);
       expect(levels).toMatchObject({ setup: 'setup1', side: withImpulse, triggerMet: true, takeProfit1: map(200) });
-      expect(levels.stopLoss).toBeCloseTo(map(100) * below, 9);
       expect(levels.takeProfit2).toBeCloseTo(map(301.8), 9);
     });
 
@@ -44,10 +39,9 @@ describe.each(sides)('buildLevels ($side)', ({ s, flip, flipCloses, map, below, 
   });
 
   describe('Setup 2: Wave 4→5', () => {
-    it('meets the trigger with W4 0.375 and sets SL, TP1 = P3, TP2 = P5′', () => {
+    it('meets the trigger with W4 0.375 and sets TP1 = P3, TP2 = P5′', () => {
       const levels = levelsOf(fx.BASE.slice(0, 5));
       expect(levels).toMatchObject({ setup: 'setup2', side: withImpulse, triggerMet: true, takeProfit1: map(300) });
-      expect(levels.stopLoss).toBeCloseTo(map(200) * below, 9);
       expect(levels.takeProfit2).toBeCloseTo(map(340), 9);
     });
 
@@ -77,7 +71,6 @@ describe.each(sides)('buildLevels ($side)', ({ s, flip, flipCloses, map, below, 
     it('meets the trigger on RSI divergence and swaps TP1 = PA′, TP2 = P4 when PA′ is short of P4', () => {
       const levels = wave5(sx.W5_PRICES, sx.W5_DIVERGENT);
       expect(levels).toMatchObject({ setup: 'setup3a', side: against, triggerMet: true });
-      expect(levels.stopLoss).toBeCloseTo(map(340) * above, 9);
       expect(levels.takeProfit1).toBeCloseTo(map(248.32), 9);
       expect(levels.takeProfit2).toBeCloseTo(map(240), 9);
     });
@@ -94,10 +87,9 @@ describe.each(sides)('buildLevels ($side)', ({ s, flip, flipCloses, map, below, 
   });
 
   describe('Setup 3b: Wave B→C', () => {
-    it('meets the trigger with B 0.556 and sets SL, TP1 = PA, TP2 = PB + 1.618·A', () => {
+    it('meets the trigger with B 0.556 and sets TP1 = PA, TP2 = PB + 1.618·A', () => {
       const levels = levelsOf(fx.BASE);
       expect(levels).toMatchObject({ setup: 'setup3b', side: against, triggerMet: true, takeProfit1: map(250) });
-      expect(levels.stopLoss).toBeCloseTo(map(300) * above, 9);
       expect(levels.takeProfit2).toBeCloseTo(map(154.38), 9);
     });
 
@@ -118,73 +110,80 @@ describe.each(sides)('buildLevels ($side)', ({ s, flip, flipCloses, map, below, 
   it.each([3, 5, 6, 8])('m = %i has a setup and no "no setup" reason', (m) => {
     expect(noSetupReason(scenarioOf(fx.BASE.slice(0, m)))).toBeNull();
   });
-
-  it('keeps s in the mirrored SL multiplier', () => {
-    expect(Math.sign(map(100) - levelsOf([100, 200, 140]).stopLoss)).toBe(s);
-  });
 });
 
 describe('price metrics', () => {
-  const levels = { setup: 'setup1', side: 'LONG', triggerMet: true, stopLoss: 99.5, takeProfit1: 200, takeProfit2: 301.8 } as const;
+  const levels = { setup: 'setup1', side: 'LONG', triggerMet: true, takeProfit1: 200, takeProfit2: 301.8 } as const;
+  const short = { ...levels, side: 'SHORT', takeProfit1: 800, takeProfit2: 698.2 } as const;
 
-  it('computes risk and R:R from the entry', () => {
-    const { risk, rr1, rr2 } = priceMetrics(levels, 140);
-    expect(risk).toBeCloseTo(40.5, 9);
-    expect(rr1).toBeCloseTo(60 / 40.5, 9);
-    expect(rr2).toBeCloseTo(161.8 / 40.5, 9);
+  it('puts the LONG stop risk% below the entry and R:R over that distance', () => {
+    const { stopLoss, rr1, rr2 } = priceMetrics(levels, 140, RISK);
+    expect(stopLoss).toBeCloseTo(138.6, 9);
+    expect(rr1).toBeCloseTo(60 / 1.4, 9);
+    expect(rr2).toBeCloseTo(161.8 / 1.4, 9);
+  });
+
+  it('puts the SHORT stop risk% above the entry', () => {
+    const { stopLoss, rr1, rr2 } = priceMetrics(short, 860, RISK);
+    expect(stopLoss).toBeCloseTo(868.6, 9);
+    expect(rr1).toBeCloseTo(60 / 8.6, 9);
+    expect(rr2).toBeCloseTo(161.8 / 8.6, 9);
+  });
+
+  it('scales the stop with the risk per trade', () => {
+    expect(priceMetrics(levels, 140, 10).stopLoss).toBeCloseTo(126, 9);
+    expect(priceMetrics(short, 860, 10).stopLoss).toBeCloseTo(946, 9);
   });
 
   it('computes Δ% from the entry', () => {
-    expect(deltaPercent(99.5, 140)).toBeCloseTo(-28.928571, 5);
+    expect(deltaPercent(138.6, 140)).toBeCloseTo(-1, 9);
     expect(deltaPercent(200, 140)).toBeCloseTo(42.857143, 5);
   });
 
-  it('computes the SHORT side the same way', () => {
-    const short = { ...levels, side: 'SHORT', stopLoss: 904.5, takeProfit1: 800, takeProfit2: 698.2 } as const;
-    const { risk, rr1, rr2 } = priceMetrics(short, 860);
-    expect(risk).toBeCloseTo(44.5, 9);
-    expect(rr1).toBeCloseTo(60 / 44.5, 9);
-    expect(rr2).toBeCloseTo(161.8 / 44.5, 9);
-  });
-
   it('is negative for a target the price already passed (LONG)', () => {
-    const { rr1, rr2 } = priceMetrics(levels, 240);
-    expect(rr1).toBeCloseTo(-40 / 140.5, 9);
-    expect(rr2).toBeCloseTo(61.8 / 140.5, 9);
+    const { rr1, rr2 } = priceMetrics(levels, 240, RISK);
+    expect(rr1).toBeCloseTo(-40 / 2.4, 9);
+    expect(rr2).toBeCloseTo(61.8 / 2.4, 9);
   });
 
   it('is negative for a target the price already passed (SHORT)', () => {
-    const short = { ...levels, side: 'SHORT', stopLoss: 904.5, takeProfit1: 800, takeProfit2: 698.2 } as const;
-    const { rr1, rr2 } = priceMetrics(short, 760);
-    expect(rr1).toBeCloseTo(-40 / 144.5, 9);
-    expect(rr2).toBeCloseTo(61.8 / 144.5, 9);
+    const { rr1, rr2 } = priceMetrics(short, 760, RISK);
+    expect(rr1).toBeCloseTo(-40 / 7.6, 9);
+    expect(rr2).toBeCloseTo(61.8 / 7.6, 9);
   });
 
   it('is zero at the target', () => {
-    expect(priceMetrics(levels, 200).rr1).toBe(0);
+    expect(priceMetrics(levels, 200, RISK).rr1).toBe(0);
   });
 });
 
 describe.each(sides)('evaluateSignal ($side)', ({ s, flip, map }) => {
   const scenarioOf = (prices: readonly number[]) => scenarioFrom(flip(fx.pivots('trough', prices)));
-  const statusAt = (prices: readonly number[], price: number, openCandle = candle(map(price))) => {
+  const statusAt = (prices: readonly number[], price: number, openCandle = candle(map(price)), risk = RISK) => {
     const scenario = scenarioOf(prices);
-    return evaluateSignal(scenario, buildLevels(scenario, [])!, '4h', map(price), openCandle);
+    return evaluateSignal(scenario, buildLevels(scenario, [])!, '4h', map(price), openCandle, risk);
   };
-  // Setup 1 on (100, 200, 140): SL 99.5 (or its mirror), TP1 200, invalidation P0 100.
+  // Setup 1 on (100, 200, 140): TP1 200, invalidation P0 100 (or their mirrors).
   const SETUP1 = [100, 200, 140] as const;
 
-  it('is ACTIVE with the trigger met, price between SL and TP1 and rr1 ≥ 1', () => {
+  it('is ACTIVE with the trigger met and rr1 ≥ 1, the stop risk% from the entry', () => {
     const signal = statusAt(SETUP1, 140);
     expect(signal).toMatchObject({ status: 'ACTIVE', timeframe: '4h', entry: map(140), setup: 'setup1' });
+    expect(signal.stopLoss).toBeCloseTo(map(140) * (1 - s * 0.01), 9);
+  });
+
+  it('a larger risk per trade widens the stop and can drop rr1 below 1', () => {
+    // At 190 (mirror 810), TP1 is 10 away: 1% risks 1.9 (8.1), 10% risks 19 (81).
+    expect(statusAt(SETUP1, 190).status).toBe('ACTIVE');
+    expect(statusAt(SETUP1, 190, candle(map(190)), 10).status).toBe('WATCHING');
   });
 
   it('is WATCHING when the trigger is not met', () => {
     expect(statusAt([100, 200, 180], 130).status).toBe('WATCHING');
   });
 
-  // A shallow Wave 2 (0.4) puts TP2 at 321.8 (mirror 678.2). Past TP1 at 200 and 205, rr2 ≥ 1 on both
-  // sides (bullish 121.8 / 100.5, bearish 121.8 / 104.5 at 200); at 215 it is below 1.
+  // A shallow Wave 2 (0.4) puts TP2 at 321.8 (mirror 678.2). Past TP1 at 200 and 205, rr2 ≥ 1; at 320
+  // TP2 is 1.8 away, under the 3.2 (mirror 6.8) risked.
   const SHALLOW = [100, 200, 160] as const;
 
   it.each([200, 205])('at or past TP1 (%i), TP2 is the target: ACTIVE with rr2 ≥ 1', (price) => {
@@ -195,7 +194,7 @@ describe.each(sides)('evaluateSignal ($side)', ({ s, flip, map }) => {
   });
 
   it('past TP1 with rr2 < 1 is WATCHING', () => {
-    const signal = statusAt(SHALLOW, 215);
+    const signal = statusAt(SHALLOW, 320);
     expect(signal.rr2).toBeLessThan(1);
     expect(signal.status).toBe('WATCHING');
   });
@@ -211,7 +210,7 @@ describe.each(sides)('evaluateSignal ($side)', ({ s, flip, map }) => {
   });
 
   it('is WATCHING when rr1 < 1', () => {
-    const signal = statusAt(SETUP1, 160);
+    const signal = statusAt(SETUP1, 199);
     expect(signal.rr1).toBeLessThan(1);
     expect(signal.status).toBe('WATCHING');
   });
@@ -225,14 +224,10 @@ describe.each(sides)('evaluateSignal ($side)', ({ s, flip, map }) => {
     expect(statusAt(SETUP1, 140, openCandle).status).toBe('INVALIDATED');
   });
 
-  it('is INVALIDATED on a stop-loss breach alone, inclusive (Setup 3b)', () => {
-    const scenario = scenarioOf(fx.BASE);
-    const levels = buildLevels(scenario, [])!;
-    const at = (price: number) => evaluateSignal(scenario, levels, '4h', price, candle(price)).status;
-    expect(at(levels.stopLoss)).toBe('INVALIDATED');
-    expect(at(levels.stopLoss - s * 0.1)).toBe('ACTIVE');
-    // Still short of the invalidation price P5.
-    expect(s * (levels.stopLoss - map(340))).toBeLessThan(0);
+  it('the stop moves with the entry, so only the invalidation price invalidates (Setup 3b)', () => {
+    // A SHORT (mirror LONG) at 270 whose open candle spanned 5% up, still short of P5 340.
+    const openCandle = { high: Math.max(map(260), map(283.5)), low: Math.min(map(260), map(283.5)) };
+    expect(statusAt(fx.BASE, 270, openCandle).status).toBe('ACTIVE');
   });
 });
 

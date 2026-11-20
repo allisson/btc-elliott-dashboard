@@ -58,16 +58,16 @@ export function Dashboard({ data, ticker, pausedSince }: DashboardProps) {
     [data],
   );
   const agreement = useMemo(() => confluence(analyses), [analyses]);
+  const risk = riskFromInputs(riskInputs);
   const cards = TIMEFRAMES.map((t) => ({
     timeframe: t.id,
-    card: stripCard(data[t.id].analysis, price, breachProbe(data[t.id].open, price), paused),
+    card: stripCard(data[t.id].analysis, price, breachProbe(data[t.id].open, price), risk.settings.riskPercent, paused),
   }));
 
   const { analysis, closed, open } = data[focused];
   const candles = useMemo(() => (open ? [...closed, open] : closed), [closed, open]);
   const rank = selectedRank(analysis, ranks[focused]);
-  const view = scenarioView(analysis, rank, price, breachProbe(open, price));
-  const risk = riskFromInputs(riskInputs);
+  const view = scenarioView(analysis, rank, price, breachProbe(open, price), risk.settings.riskPercent);
 
   return (
     <div className="flex flex-col gap-2 p-2 lg:h-full">

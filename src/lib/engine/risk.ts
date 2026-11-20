@@ -1,5 +1,5 @@
-// Position sizing (spec §7): the stop stays at the setup's level; the position is sized to it,
-// never above capital (1x). Pure.
+// Position sizing (spec §7): 1x, the whole capital; the stop sits risk% from the entry, so hitting it
+// loses risk% of the capital. Pure.
 import { RISK_DEFAULTS, RISK_LIMITS } from '../../config.ts';
 import type { PositionSize, RiskSettings } from '../../types.ts';
 
@@ -18,16 +18,11 @@ export function sanitizeRiskSettings(raw: { capital?: number; riskPercent?: numb
   };
 }
 
-export function positionSize(settings: RiskSettings, entry: number, stopLoss: number): PositionSize {
-  const riskUsd = (settings.capital * settings.riskPercent) / 100;
-  const stopDistance = Math.abs(entry - stopLoss) / entry;
-  const positionUsd = Math.min(riskUsd / stopDistance, settings.capital);
-  const actualRiskUsd = positionUsd * stopDistance;
+export function positionSize(settings: RiskSettings, entry: number): PositionSize {
   return {
-    positionUsd,
-    positionBtc: positionUsd / entry,
-    actualRiskUsd,
-    actualRiskPercent: (actualRiskUsd / settings.capital) * 100,
-    capped: positionUsd === settings.capital,
+    positionUsd: settings.capital,
+    positionBtc: settings.capital / entry,
+    riskUsd: (settings.capital * settings.riskPercent) / 100,
+    riskPercent: settings.riskPercent,
   };
 }

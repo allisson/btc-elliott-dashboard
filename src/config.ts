@@ -68,11 +68,6 @@ export const SETUP_TRIGGERS = {
   setup3bBRetracement: { min: 0.45, max: 0.668 },
 } as const;
 
-export const SL_MULTIPLIERS = {
-  belowLevel: 0.995, // Setups 1 and 2 (LONG); mirrors to 1.005
-  aboveLevel: 1.008, // Setups 3a and 3b (SHORT); mirrors to 0.992
-} as const;
-
 export const SETUP_3B_TP2_EXTENSION = 1.618;
 
 // §6.4
@@ -110,6 +105,7 @@ export const CHART_COLORS = {
   projectedWave: '#f59e0b',
   entry: '#3b82f6',
   stopLoss: '#f6465d',
+  invalidation: '#a855f7',
   takeProfit1: '#00c087',
   takeProfit2: '#0f7a5a',
 } as const;

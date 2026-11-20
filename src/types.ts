@@ -72,7 +72,6 @@ export interface SignalLevels {   // fixed at candle close
   setup: SetupId;
   side: 'LONG' | 'SHORT';
   triggerMet: boolean;
-  stopLoss: number;
   takeProfit1: number;
   takeProfit2: number;
 }
@@ -80,6 +79,7 @@ export interface SignalLevels {   // fixed at candle close
 export interface Signal extends SignalLevels {  // recomputed on every ticker update
   timeframe: Timeframe;
   entry: number;
+  stopLoss: number;            // entry ∓ risk per trade (§7): it moves with the entry
   rr1: number;
   rr2: number;
   status: 'ACTIVE' | 'WATCHING' | 'INVALIDATED';
@@ -102,9 +102,8 @@ export interface RiskSettings {
 export interface PositionSize {
   positionUsd: number;
   positionBtc: number;
-  actualRiskUsd: number;
-  actualRiskPercent: number;
-  capped: boolean;
+  riskUsd: number;
+  riskPercent: number;
 }
 
 export interface Confluence {

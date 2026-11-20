@@ -28,8 +28,9 @@ const bullish = scenarioOf(fx.BASE.slice(0, 3)); // (0)(1)(2): Setup 1, invalida
 const bearish = scenarioOf(fx.BASE.slice(0, 3), true);
 const atWave3 = scenarioOf(fx.BASE.slice(0, 4)); // (3): no setup
 
-const levels: SignalLevels = { setup: 'setup1', side: 'LONG', triggerMet: true, stopLoss: 99.5, takeProfit1: 200, takeProfit2: 301.8 };
-// Entry 149: risk 49.5, rr1 51 / 49.5 ≥ 1, so Setup 1 is Active.
+const levels: SignalLevels = { setup: 'setup1', side: 'LONG', triggerMet: true, takeProfit1: 200, takeProfit2: 301.8 };
+const RISK = 1; // %: the stop sits 1% from the entry (§7)
+// Entry 149: risk 1.49, rr1 51 / 1.49 ≥ 1, so Setup 1 is Active.
 const quiet = { high: 149, low: 149 };
 
 const analysis = (over: Partial<TimeframeAnalysis> = {}): TimeframeAnalysis => ({
@@ -46,30 +47,39 @@ const signal = (over: Partial<Signal> = {}): Signal => ({
   ...levels,
   timeframe: '4h',
   entry: 150,
-  rr1: 1.0050251256,
-  rr2: 3.0331658291,
+  stopLoss: 148.5,
+  rr1: 50 / 1.5,
+  rr2: 151.8 / 1.5,
   status: 'ACTIVE',
   ...over,
 });
 
-const position: PositionSize = { positionUsd: 297.02970297, positionBtc: 1.98019802, actualRiskUsd: 10, actualRiskPercent: 1, capped: false };
+const position: PositionSize = { positionUsd: 1000, positionBtc: 0.01028444, riskUsd: 10, riskPercent: 1 };
 
 describe('scenarioView', () => {
   it('past both targets there is no signal, with the reason', () => {
-    const v = scenarioView(analysis(), 'primary', 310, { high: 310, low: 310 });
+    const v = scenarioView(analysis(), 'primary', 310, { high: 310, low: 310 }, RISK);
     expect(v.signal).toBeNull();
     expect(v.noSetup).toBe('No setup: both targets passed');
-    expect(stripCard(analysis(), 310, { high: 310, low: 310 }, false).status).toBe('NO SETUP');
+    expect(stripCard(analysis(), 310, { high: 310, low: 310 }, RISK, false).status).toBe('NO SETUP');
   });
 
   it('past both targets but breached since the close: still Invalidated', () => {
-    const v = scenarioView(analysis(), 'primary', 310, { high: 310, low: 99 });
+    const v = scenarioView(analysis(), 'primary', 310, { high: 310, low: 99 }, RISK);
     expect(v.signal?.status).toBe('INVALIDATED');
     expect(v.noSetup).toBeNull();
   });
 
+  it('sizes the stop and R:R with the risk per trade', () => {
+    // At 190, TP1 is 10 away: 1% risks 1.9 (Active), 10% risks 19 (Watching).
+    const at190 = { high: 190, low: 190 };
+    expect(scenarioView(analysis(), 'primary', 190, at190, RISK).signal).toMatchObject({ status: 'ACTIVE', stopLoss: 188.1 });
+    expect(scenarioView(analysis(), 'primary', 190, at190, 10).signal).toMatchObject({ status: 'WATCHING', stopLoss: 171 });
+    expect(stripCard(analysis(), 190, at190, 10, false).status).toBe('WATCHING');
+  });
+
   it('evaluates the selected scenario against the live price and its live rules', () => {
-    const v = scenarioView(analysis(), 'primary', 149, quiet);
+    const v = scenarioView(analysis(), 'primary', 149, quiet, RISK);
     expect(v.scenario).toBe(bullish);
     expect(v.signal).toMatchObject({ status: 'ACTIVE', entry: 149, timeframe: '4h' });
     expect(v.rules.map((r) => r.status)).toEqual(['valid', 'not_yet', 'not_yet']);
@@ -77,19 +87,19 @@ describe('scenarioView', () => {
   });
 
   it('marks Rule 1 violated and the signal invalidated after a breach of P0 since the close', () => {
-    const v = scenarioView(analysis(), 'primary', 150, { high: 150, low: 99 });
+    const v = scenarioView(analysis(), 'primary', 150, { high: 150, low: 99 }, RISK);
     expect(v.signal!.status).toBe('INVALIDATED');
     expect(v.rules[0].status).toBe('violated');
   });
 
   it('has no signal and a waiting reason for a scenario with no setup', () => {
-    const v = scenarioView(analysis({ primary: atWave3, primaryLevels: null }), 'primary', 150, quiet);
+    const v = scenarioView(analysis({ primary: atWave3, primaryLevels: null }), 'primary', 150, quiet, RISK);
     expect(v.signal).toBeNull();
     expect(v.noSetup).toBe('No setup: waiting for Wave 4 to complete (then Setup 2)');
   });
 
   it('is empty on a Neutral timeframe', () => {
-    const v = scenarioView(analysis({ primary: null, alternative: null, primaryLevels: null }), 'primary', 150, quiet);
+    const v = scenarioView(analysis({ primary: null, alternative: null, primaryLevels: null }), 'primary', 150, quiet, RISK);
     expect(v).toEqual({ scenario: null, signal: null, rules: [], noSetup: null });
   });
 });
@@ -116,7 +126,7 @@ describe('scenarioTab', () => {
 
 describe('stripCard', () => {
   it('always shows the Primary Scenario, with its signal status', () => {
-    const card = stripCard(analysis(), 149, quiet, false);
+    const card = stripCard(analysis(), 149, quiet, RISK, false);
     expect(card).toEqual({
       label: '4H',
       direction: 'bullish',
@@ -127,14 +137,14 @@ describe('stripCard', () => {
   });
 
   it('shows NO SETUP, NEUTRAL and PAUSED', () => {
-    expect(stripCard(analysis({ primary: atWave3, primaryLevels: null }), 150, quiet, false).status).toBe('NO SETUP');
-    const neutral = stripCard(analysis({ timeframe: '1w', primary: null, alternative: null, primaryLevels: null }), 150, quiet, false);
+    expect(stripCard(analysis({ primary: atWave3, primaryLevels: null }), 150, quiet, RISK, false).status).toBe('NO SETUP');
+    const neutral = stripCard(analysis({ timeframe: '1w', primary: null, alternative: null, primaryLevels: null }), 150, quiet, RISK, false);
     expect(neutral).toEqual({ label: '1W', direction: null, wave: null, status: 'NEUTRAL', confidence: null });
-    expect(stripCard(analysis(), 150, quiet, true).status).toBe('PAUSED');
+    expect(stripCard(analysis(), 150, quiet, RISK, true).status).toBe('PAUSED');
   });
 
   it('keeps NEUTRAL while paused: a Neutral timeframe has no signal to pause', () => {
-    expect(stripCard(analysis({ primary: null, alternative: null, primaryLevels: null }), 150, quiet, true).status).toBe('NEUTRAL');
+    expect(stripCard(analysis({ primary: null, alternative: null, primaryLevels: null }), 150, quiet, RISK, true).status).toBe('NEUTRAL');
   });
 });
 
@@ -151,25 +161,20 @@ describe('confluenceBadge', () => {
 
 describe('metricGrid', () => {
   it('shows every metric with grouped prices, signed Δ% and R:R', () => {
-    expect(metricGrid(signal({ entry: 97_234.5, stopLoss: 96_000, takeProfit1: 98_500, takeProfit2: 101_000, rr1: 1.02, rr2: 3.06 }), position)).toEqual([
+    expect(metricGrid(signal({ entry: 97_234.5, stopLoss: 96_262.155, takeProfit1: 98_500, takeProfit2: 101_000, rr1: 1.02, rr2: 3.06 }), position)).toEqual([
       { label: 'Entry', value: '97,234.50', detail: null },
-      { label: 'Stop Loss', value: '96,000.00', detail: '-1.27%' },
+      { label: 'Stop Loss', value: '96,262.16', detail: '-1.00%' },
       { label: 'TP1', value: '98,500.00', detail: '+1.30% · R:R 1:1.0' },
       { label: 'TP2', value: '101,000.00', detail: '+3.87% · R:R 1:3.1' },
-      { label: 'Position', value: '297.03 USDT', detail: '1.98020 BTC' },
+      { label: 'Position', value: '1,000.00 USDT', detail: '0.01028 BTC' },
       { label: 'Risk', value: '10.00 USDT', detail: '1.00% of capital' },
     ]);
   });
 
-  it('says when the position is capped by capital', () => {
-    const capped = { ...position, positionUsd: 1000, actualRiskUsd: 5, actualRiskPercent: 0.5, capped: true };
-    expect(metricGrid(signal(), capped).at(-1)).toEqual({ label: 'Risk', value: '5.00 USDT', detail: '0.50% of capital (capped by capital)' });
-  });
-
-  it('drops the entry-derived metrics of an Invalidated signal and keeps the levels', () => {
+  it('drops the entry-derived metrics of an Invalidated signal, the stop among them, and keeps the targets', () => {
     expect(metricGrid(signal({ status: 'INVALIDATED' }), position)).toEqual([
       { label: 'Entry', value: '—', detail: null },
-      { label: 'Stop Loss', value: '99.50', detail: null },
+      { label: 'Stop Loss', value: '—', detail: null },
       { label: 'TP1', value: '200.00', detail: null },
       { label: 'TP2', value: '301.80', detail: null },
       { label: 'Position', value: '—', detail: null },

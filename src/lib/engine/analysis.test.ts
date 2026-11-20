@@ -21,7 +21,6 @@ describe('analyseTimeframe', () => {
     expect(a.alternative).toBeNull();
     expect(a.alternativeLevels).toBeNull();
     expect(a.primaryLevels).toMatchObject({ setup: 'setup1', side: 'LONG', triggerMet: true, takeProfit1: 112 });
-    expect(a.primaryLevels?.stopLoss).toBeCloseTo(98 * 0.995, 9);
     expect(a.primaryLevels?.takeProfit2).toBeCloseTo(104 + 1.618 * 14, 9);
   });
 
@@ -30,7 +29,6 @@ describe('analyseTimeframe', () => {
     expect(a.primary?.count.lastLabel).toBe('2');
     expect(a.primary?.direction).toBe('bearish');
     expect(a.primaryLevels).toMatchObject({ setup: 'setup1', side: 'SHORT', triggerMet: true, takeProfit1: 88 });
-    expect(a.primaryLevels?.stopLoss).toBeCloseTo(100 * 1.005, 9);
     expect(a.primaryLevels?.takeProfit2).toBeCloseTo(96 - 1.618 * 12, 9);
   });
 

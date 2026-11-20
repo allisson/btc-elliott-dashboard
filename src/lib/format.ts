@@ -53,7 +53,6 @@ export function copySetupText({ signal, scenario, position, capital, generatedAt
   const delta = (x: number) => formatDeltaPercent(((x - signal.entry) / signal.entry) * 100);
   const tf = TIMEFRAMES.find((t) => t.id === signal.timeframe)!.label;
   const rank = scenario.rank === 'primary' ? 'Primary Scenario' : 'Alternative Scenario';
-  const capped = position.capped ? ' (capped by capital)' : '';
 
   return [
     `BTC/USDT · ${tf} · ${signal.side} 1x · ${SETUP_NAMES[signal.setup]}`,
@@ -64,7 +63,7 @@ export function copySetupText({ signal, scenario, position, capital, generatedAt
     ...(signal.rr1 > 0 ? [`TP1:         ${price(signal.takeProfit1)}  (${delta(signal.takeProfit1)})  ${formatRR(signal.rr1)}`] : []),
     ...(signal.rr2 > 0 ? [`TP2:         ${price(signal.takeProfit2)}  (${delta(signal.takeProfit2)})  ${formatRR(signal.rr2)}`] : []),
     `Position:    ${formatUsdt(position.positionUsd, false)} USDT (${formatBtc(position.positionBtc)} BTC) of ${formatUsdt(capital, false)} USDT`,
-    `Risk:        ${formatUsdt(position.actualRiskUsd, false)} USDT (${formatPercent(position.actualRiskPercent)}% of capital)${capped}`,
+    `Risk:        ${formatUsdt(position.riskUsd, false)} USDT (${formatPercent(position.riskPercent)}% of capital)`,
     `Invalidation: ${scenario.invalidationReason} at ${price(scenario.invalidationPrice)}`,
     `Generated: ${formatUtc(generatedAt)}`,
     'Not financial advice. 1x, no leverage.',
