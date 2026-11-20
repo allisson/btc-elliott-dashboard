@@ -199,10 +199,24 @@ A candidate is discarded if any applicable check fails.
 | Rule 3: Wave 4 does not overlap Wave 1 | m ≥ 5 | `s·(P4 − P1) > 0` |
 | Rule 2: Wave 3 is not the shortest | m ≥ 6 | `len(W3) ≥ min(len(W1), len(W5))` |
 | Rule 2, pending | m = 4 or 5 and `len(W3) < len(W1)` | passes; Wave 5 projection capped at `len(W3)` (§4.5); checklist detail says "requires Wave 5 ≤ Wave 3" |
+| Wave B does not pass the Wave 5 extreme (structural) | m = 8 | `s·(P5 − PB) > 0` |
+
+The B check keeps counts consistent with §5.5: a count whose PB already passed P5 would be born
+invalidated.
 
 The checklist in the UI shows Rule 1, Rule 2 and Rule 3 as `VALID` / `VIOLATED`, each with its
 formula and measured values. A rule that does not apply yet (e.g. Rule 3 when m = 3) shows
-`NOT YET`.
+`NOT YET`. Rule 2 applies from m = 6, so at m = 4 and 5 it is always `NOT YET`; its detail is
+"requires Wave 5 ≤ Wave 3" when pending, the formula otherwise. Structural checks have no
+checklist entry.
+
+Every count that survives generation has only `VALID` and `NOT YET` checks, since a violation
+discards the candidate. `VIOLATED` appears only when the live price breaches the scenario's
+invalidation price (§5.5) and marks the rule that breach violates; the exact mapping is settled in
+Phase 4.
+
+Detail strings show prices and wave lengths with 2 decimals, e.g.
+`s·(P2 − P0) > 0 · P2 98.00 vs P0 95.00`.
 
 ### 4.4 Ratios and scoring
 
@@ -217,9 +231,12 @@ Measured ratios, where they exist:
 | A retracement | `|P5 − PA| / |P5 − P0|` | 0.382, 0.5 |
 | B retracement | `|PB − PA| / |P5 − PA|` | 0.5, 0.618 |
 
-- Grade of one ratio: `d` = distance to its nearest target, `grade = max(0, 1 − d / TOLERANCE)`,
-  with `TOLERANCE = 0.15`.
+- Grade of one ratio: `d = min |ratio − target|` over its targets (absolute, in ratio units),
+  `grade = max(0, 1 − d / TOLERANCE)`, with `TOLERANCE = 0.15`.
 - Candidate score: mean of its grades, in [0, 1].
+- Known bias: a short count has fewer grades (m = 3 has only W2), so one ratio on target scores
+  1.0 and can outrank a longer, well-formed count. Kept as is; to be reviewed against the real
+  snapshots in Phase 6.
 
 ### 4.5 Projections
 
