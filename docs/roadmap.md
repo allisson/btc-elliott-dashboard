@@ -117,8 +117,20 @@ Neutral overlay.
 
 ## Phase 8: Panels
 
+- `lib/panels.ts` (tested): analyses, ticker and risk settings → strip cards, metric grid
+  (Invalidated included), checklist rows, Fibonacci lines, header 24h text; parsing of the stored
+  risk inputs (§7, §9.2, §9.3, §9.5).
 - `Header.tsx` (§9.2), `ConfluenceStrip.tsx` (§9.3), `SignalPanel.tsx` (§9.5) with risk inputs in
   `localStorage`, the scenario tabs, the checklist, the Fibonacci box and Copy Setup.
+  Presentational.
+- `Dashboard.tsx`: the §9.0 layout with the four regions. It takes data (analyses, candles per
+  timeframe, ticker, open candles, paused-since) and owns the UI state: focused timeframe,
+  scenario tab per timeframe, the two toggles, risk inputs. Phase 9 feeds it from `App.tsx`.
+- `dev/dashboard.html` replaces `dev/chart.html`: the recorded snapshots and `ticker-24hr.json`
+  into `Dashboard`, with `entry` = the ticker's last price on every timeframe (§6.3), under the
+  `DEV · SNAPSHOT` banner and a `paused` checkbox. Never reaches `App.tsx`
+  ([ADR 0002](./adr/0002-no-synthetic-data-at-runtime.md)); deleted in Phase 9. The price flash
+  needs ticks and is checked in Phase 9.
 
 **Done when**, in the browser, switching timeframe and scenario updates the chart and panel; Copy
 Setup pastes the §9.6 text; and the risk inputs survive a reload and fall back to defaults when
@@ -127,7 +139,8 @@ invalid.
 ## Phase 9: Live integration
 
 - `App.tsx`: parallel load of 4 timeframes, combined stream, analysis on close, ticker-driven
-  metrics (§6.5), error state and offline mode (§3.4).
+  metrics (§6.5), error state and offline mode (§3.4), all fed into `Dashboard`. Delete
+  `dev/dashboard.html`.
 
 **Done when**, in the browser against live Binance: the price ticks; a 1h candle close re-analyses
 only 1h; cutting the network shows `OFFLINE` and hides signals; restoring it backfills and

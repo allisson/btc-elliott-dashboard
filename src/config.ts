@@ -86,6 +86,17 @@ export const DISPLAY_DECIMALS = { price: 2, percent: 2, rr: 1, btc: 5, usdt: 2, 
 // §7
 export const RISK_DEFAULTS = { capital: 1000, riskPercent: 1 } as const;
 export const RISK_LIMITS = { minCapital: 0, minRiskPercent: 0.1, maxRiskPercent: 10 } as const;
+export const RISK_STORAGE_KEY = 'btc-elliott-dashboard:risk';
+
+// §9.0: focused timeframe on load
+export const DEFAULT_TIMEFRAME: Timeframe = '4h';
+
+// §9.5
+export const FIB_DECIMALS = 3;
+export const COPY_FEEDBACK_MS = 2_000;
+
+// §9.2: how long the header price stays green or red after a change
+export const PRICE_FLASH_MS = 600;
 
 // §9.1 (the chart draws on canvas, so it needs the hex values; the CSS tokens live in index.css)
 export const CHART_COLORS = {
