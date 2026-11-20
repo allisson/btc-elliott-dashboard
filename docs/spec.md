@@ -151,6 +151,19 @@ Input: the closed candles of one timeframe and its threshold `θ` (§3.1).
    `≥ low × (1 + θ)`. The confirming candle starts tracking the opposite extreme.
 4. Pivots alternate peak/trough. The final, unconfirmed extreme is **not** a pivot.
 
+Within one candle (the data has no intra-candle order):
+
+- **Extend first, then confirm.** A candle that sets a new running extreme (strictly higher high or
+  strictly lower low) only moves the extreme; it never confirms the extreme it just set. An
+  outside candle that both makes a new high and falls `θ` below the old one therefore confirms
+  nothing; a later candle confirms the new high.
+- **Ties keep the first.** A high equal to the running high does not move it (same for lows).
+- **Ambiguous start waits.** If, before the first pivot, one candle meets both the fall from the
+  running high and the rise from the running low, neither is confirmed; the first candle that
+  meets only one of them decides.
+
+Comparisons use the formulas above as written, with no epsilon.
+
 Output: `Pivot[]` with `index`, `time`, `price` (the candle's high for a peak, low for a trough)
 and `type`.
 
