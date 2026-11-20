@@ -32,6 +32,12 @@ export function formatDeltaPercent(x: number): string {
 // ms since epoch → `YYYY-MM-DD HH:mm UTC`.
 export const formatUtc = (ms: number) => `${new Date(ms).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 
+// ms since epoch → `HH:mm UTC`.
+export const formatUtcTime = (ms: number) => `${new Date(ms).toISOString().slice(11, 16)} UTC`;
+
+// §3.4, §9.0: shown wherever signals are hidden while the stream is down.
+export const pausedNotice = (since: number) => `Signals paused: data stale since ${formatUtcTime(since)}`;
+
 export interface CopySetupInput {
   signal: Signal;
   scenario: Pick<Scenario, 'rank' | 'confidence' | 'invalidationReason' | 'invalidationPrice'>;
