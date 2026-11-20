@@ -15,7 +15,7 @@ import type {
   TimeframeAnalysis,
 } from '../types.ts';
 import { sanitizeRiskSettings } from './engine/risk.ts';
-import { deltaPercent, evaluateSignal, liveRules, noSetupReason, type OpenCandle } from './engine/setups.ts';
+import { deltaPercent, evaluateSignal, liveRules, noSetupReason, TARGETS_PASSED, type OpenCandle } from './engine/setups.ts';
 import { formatBtc, formatConfidence, formatDeltaPercent, formatPercent, formatPrice, formatRR, formatUsdt } from './format.ts';
 
 export type Rank = Scenario['rank'];
@@ -38,11 +38,14 @@ export function scenarioView(analysis: TimeframeAnalysis, rank: Rank, price: num
   const scenario = rank === 'primary' ? analysis.primary : analysis.alternative;
   if (!scenario) return { scenario: null, signal: null, rules: [], noSetup: null };
   const levels = rank === 'primary' ? analysis.primaryLevels : analysis.alternativeLevels;
+  const signal = levels && evaluateSignal(scenario, levels, analysis.timeframe, price, openCandle);
+  // §6.4: past both targets the signal is spent; an Invalidated one stays visible.
+  const spent = signal !== null && signal.status !== 'INVALIDATED' && signal.rr2 <= 0;
   return {
     scenario,
-    signal: levels && evaluateSignal(scenario, levels, analysis.timeframe, price, openCandle),
+    signal: spent ? null : signal,
     rules: liveRules(scenario, price, openCandle),
-    noSetup: noSetupReason(scenario),
+    noSetup: spent ? TARGETS_PASSED : noSetupReason(scenario),
   };
 }
 
@@ -101,8 +104,9 @@ export function metricGrid(signal: Signal, position: PositionSize): Metric[] {
   return [
     dead ? dash('Entry') : { label: 'Entry', value: formatPrice(signal.entry), detail: null },
     level('Stop Loss', signal.stopLoss, null),
-    level('TP1', signal.takeProfit1, signal.rr1),
-    level('TP2', signal.takeProfit2, signal.rr2),
+    // §6.4: a target the price already passed is dropped.
+    ...(signal.rr1 > 0 ? [level('TP1', signal.takeProfit1, signal.rr1)] : []),
+    ...(signal.rr2 > 0 ? [level('TP2', signal.takeProfit2, signal.rr2)] : []),
     dead ? dash('Position') : { label: 'Position', value: `${formatUsdt(position.positionUsd)} USDT`, detail: `${formatBtc(position.positionBtc)} BTC` },
     dead
       ? dash('Risk')

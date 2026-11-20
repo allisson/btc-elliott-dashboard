@@ -19,8 +19,7 @@ export const formatPrice = (x: number, grouped = true) => number(x, DISPLAY_DECI
 export const formatUsdt = (x: number, grouped = true) => number(x, DISPLAY_DECIMALS.usdt, grouped);
 export const formatBtc = (x: number) => x.toFixed(DISPLAY_DECIMALS.btc);
 export const formatPercent = (x: number) => x.toFixed(DISPLAY_DECIMALS.percent);
-// §6.3: a target at or behind the entry has no reward left.
-export const formatRR = (x: number) => (x > 0 ? `R:R 1:${x.toFixed(DISPLAY_DECIMALS.rr)}` : 'passed');
+export const formatRR = (x: number) => `R:R 1:${x.toFixed(DISPLAY_DECIMALS.rr)}`;
 export const formatConfidence = (x: number) => `${x.toFixed(DISPLAY_DECIMALS.confidence)}%`;
 
 // Signed with ASCII + and -; a value that rounds to zero is +0.00%.
@@ -61,8 +60,9 @@ export function copySetupText({ signal, scenario, position, capital, generatedAt
     `Status: ${signal.status} · ${rank} (${formatConfidence(scenario.confidence)})`,
     `Entry:       ${price(signal.entry)}`,
     `Stop Loss:   ${price(signal.stopLoss)}  (${delta(signal.stopLoss)})`,
-    `TP1:         ${price(signal.takeProfit1)}  (${delta(signal.takeProfit1)})  ${formatRR(signal.rr1)}`,
-    `TP2:         ${price(signal.takeProfit2)}  (${delta(signal.takeProfit2)})  ${formatRR(signal.rr2)}`,
+    // §6.4: a target the price already passed is left out.
+    ...(signal.rr1 > 0 ? [`TP1:         ${price(signal.takeProfit1)}  (${delta(signal.takeProfit1)})  ${formatRR(signal.rr1)}`] : []),
+    ...(signal.rr2 > 0 ? [`TP2:         ${price(signal.takeProfit2)}  (${delta(signal.takeProfit2)})  ${formatRR(signal.rr2)}`] : []),
     `Position:    ${formatUsdt(position.positionUsd, false)} USDT (${formatBtc(position.positionBtc)} BTC) of ${formatUsdt(capital, false)} USDT`,
     `Risk:        ${formatUsdt(position.actualRiskUsd, false)} USDT (${formatPercent(position.actualRiskPercent)}% of capital)${capped}`,
     `Invalidation: ${scenario.invalidationReason} at ${price(scenario.invalidationPrice)}`,

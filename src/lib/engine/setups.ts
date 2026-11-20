@@ -79,6 +79,9 @@ export function noSetupReason(scenario: Scenario): string | null {
   return null;
 }
 
+// §6.4: a signal whose two targets the price has already passed has nothing left to trade.
+export const TARGETS_PASSED = 'No setup: both targets passed';
+
 // §6.3: R:R is signed, ≤ 0 once the price has reached or passed the target.
 export function priceMetrics(levels: SignalLevels, entry: number): { risk: number; rr1: number; rr2: number } {
   const t = tradeSign(levels);
@@ -106,11 +109,12 @@ export function evaluateSignal(
   const t = tradeSign(levels);
   const { rr1, rr2 } = priceMetrics(levels, price);
   const invalidated = probes(price, openCandle).some((x) => stopBreached(levels, x) || isInvalidated(scenario, x));
-  const betweenStopAndTp1 = t * (price - levels.stopLoss) > 0 && t * (levels.takeProfit1 - price) > 0;
+  // The target is the nearest one not yet reached: once TP1 is passed, TP2 (§6.4).
+  const rr = rr1 > 0 ? rr1 : rr2;
 
   let status: Signal['status'] = 'WATCHING';
   if (invalidated) status = 'INVALIDATED';
-  else if (levels.triggerMet && betweenStopAndTp1 && rr1 >= MIN_RR1) status = 'ACTIVE';
+  else if (levels.triggerMet && t * (price - levels.stopLoss) > 0 && rr >= MIN_RR1) status = 'ACTIVE';
 
   return { ...levels, timeframe, entry: price, rr1, rr2, status };
 }
