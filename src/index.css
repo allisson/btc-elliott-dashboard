@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+
+/* Palette: spec §9.1 */
+@theme {
+  --color-background: #0b0e14;
+  --color-surface: #121824;
+  --color-surface-2: #182234;
+  --color-border: #233047;
+  --color-bullish: #00c087;
+  --color-bearish: #f6465d;
+  --color-wave-confirmed: #38bdf8;
+  --color-wave-projected: #f59e0b;
+  --color-accent: #f0b90b;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-background text-slate-200 antialiased;
+}
