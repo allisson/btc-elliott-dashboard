@@ -19,6 +19,7 @@ Phases run in order; each ends with its "done when" check plus `bun run test` gr
   first, checked at 390 px.
 - The user picks one; its layout is written into spec §9 and `prototypes/` is deleted, so no mock
   data survives the phase ([ADR 0002](./adr/0002-no-synthetic-data-at-runtime.md)).
+  **Chosen: A "Terminal"** (spec §9.0).
 
 **Done when** `bun dev` serves a dark page with the four placeholder regions,
 `bun run test` runs one passing smoke test, and the chosen prototype's layout is in spec §9 with

@@ -367,6 +367,39 @@ capital)".
 
 ## 9. UI
 
+### 9.0 Layout ("Terminal")
+
+Chosen in Phase 0 from three prototypes. Visual reference: `git show dacedf1:prototypes/a/`
+(mock data, deleted afterwards).
+
+Desktop (`lg`, ≥ 1024 px): one screen, no page scroll.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Header (§9.2): BTC/USDT · price · 24h stats      1H 4H 1D 1W · toggles · LIVE │
+├──────────────┬───────────────┬───────────────┬───────────────┬───────────────┤
+│ Confluence   │ 1H card       │ 4H card       │ 1D card       │ 1W card       │
+│ badge (§8)   │               │               │               │               │
+├──────────────┴───────────────┴───────────────┴──┬────────────────────────────┤
+│ Chart context bar: BTC/USDT · TF · scenario ·   │ Signal panel (§9.5)         │
+│ wave in progress · line legend                  │ 380 px (400 px at xl),      │
+├─────────────────────────────────────────────────┤ scrolls on its own          │
+│ Elliott chart (§9.4), fills the remaining space │                             │
+│                                                 │                             │
+└─────────────────────────────────────────────────┴────────────────────────────┘
+```
+
+- The focused timeframe's card has an accent border; the header buttons and the cards both
+  change focus.
+- Below `lg` everything stacks in one scrolling column: header (wraps), confluence strip (cards
+  scroll horizontally), chart at a fixed 420 px, then the signal panel. No horizontal page
+  scroll at 390 px.
+- Neutral timeframe: the chart shows candles only, with an overlay "<TF> is Neutral: no valid
+  count to draw."
+- Offline (§3.4): the cards show `PAUSED` instead of a status, the chart drops its price lines and
+  shows "Signals paused: data stale since HH:mm UTC", and the signal panel replaces the signal
+  card with the same notice.
+
 ### 9.1 Palette
 
 | Token | Hex |
@@ -407,6 +440,8 @@ focuses that timeframe. A confluence badge (§8) sits at the strip's start.
 - Resizes with its container (`autoSize`).
 
 ### 9.5 Signal panel
+
+Sections top to bottom, in this order:
 
 - Scenario tabs: **Primary Scenario** / **Alternative Scenario** with confidence. They switch the
   chart and panel for the focused timeframe only.
