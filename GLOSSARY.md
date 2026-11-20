@@ -10,6 +10,20 @@ A peak or trough confirmed by the ZigZag, i.e. followed by a counter-move larger
 timeframe's threshold.
 _Avoid_: swing, extreme, vertex
 
+**Peak / Trough**:
+The two kinds of pivot: a peak is a confirmed high, a trough a confirmed low. Pivots alternate
+between them.
+_Avoid_: top/bottom, high/low (for the pivot itself)
+
+**Running extreme**:
+The highest high (or lowest low) since the last pivot, not yet confirmed. It becomes a pivot once
+the threshold is met and is never emitted before that.
+_Avoid_: pending pivot, last pivot
+
+**ZigZag threshold (θ)**:
+The minimum counter-move, as a fraction of price, that confirms a pivot on a timeframe.
+_Avoid_: deviation, sensitivity
+
 **Count**:
 A labelling of consecutive pivots as waves (0–5 of an impulse, A–C of a correction), complete or
 partial, whose last point is the latest confirmed pivot.
