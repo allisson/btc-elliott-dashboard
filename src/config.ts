@@ -86,3 +86,26 @@ export const DISPLAY_DECIMALS = { price: 2, percent: 2, rr: 1, btc: 5, usdt: 2, 
 // §7
 export const RISK_DEFAULTS = { capital: 1000, riskPercent: 1 } as const;
 export const RISK_LIMITS = { minCapital: 0, minRiskPercent: 0.1, maxRiskPercent: 10 } as const;
+
+// §9.1 (the chart draws on canvas, so it needs the hex values; the CSS tokens live in index.css)
+export const CHART_COLORS = {
+  background: '#0b0e14',
+  border: '#233047',
+  text: '#94a3b8',
+  bullish: '#00c087',
+  bearish: '#f6465d',
+  confirmedWave: '#38bdf8',
+  projectedWave: '#f59e0b',
+  entry: '#3b82f6',
+  stopLoss: '#f6465d',
+  takeProfit1: '#00c087',
+  takeProfit2: '#0f7a5a',
+} as const;
+
+// §9.4
+export const CHART = {
+  volumeOpacity: 0.18,
+  volumePaneFraction: 0.2, // bottom share of the pane the volume histogram fills
+  rangeMarginCandles: 5, // empty candles on each side of the initial visible range
+  neutralVisibleCandles: 150, // initial visible range on a Neutral timeframe
+} as const;

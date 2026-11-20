@@ -99,11 +99,21 @@ passes, and the pivot counts are written in this file.
 
 ## Phase 7: Chart
 
+- `lib/chart.ts` (tested): scenario and signal → wave lines, markers, price lines and their
+  visibility (§9.4).
 - `ElliottChart.tsx`: candles, volume, confirmed and projected wave lines with markers, signal
-  price lines, `Projections` and `Trade 1x` toggles, `autoSize` (§9.4).
+  price lines, `Projections` and `Trade 1x` toggles, `autoSize`, initial visible range (§9.4);
+  chart context bar, Neutral overlay and paused overlay (§9.0). Presentational: toggle state
+  lives outside it.
+- `dev/chart.html`: dev-only page, served by `bun dev` and excluded from the build, that runs the
+  recorded snapshots (§11) through the engine under a fixed `DEV · SNAPSHOT` banner: the four
+  timeframes, Primary/Alternative tabs, the signal from `evaluateSignal` with `entry` = the open
+  candle's close, and checkboxes for the two toggles and `paused`. The snapshot never reaches `App.tsx`
+  ([ADR 0002](./adr/0002-no-synthetic-data-at-runtime.md)); the page is deleted in Phase 9.
 
 **Done when**, in the browser, the 4H snapshot shows the confirmed count, a dashed projection into
-the future, and the four price lines; the toggles hide and show them.
+the future, and the four price lines; the toggles hide and show them; the 1W snapshot shows the
+Neutral overlay.
 
 ## Phase 8: Panels
 

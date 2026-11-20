@@ -82,6 +82,7 @@ All code, identifiers, comments, docs and UI strings are in English.
 │       │   ├── confluence.ts
 │       │   ├── analysis.ts    # one timeframe at candle close (§6.5)
 │       │   └── __fixtures__/
+│       ├── chart.ts       # pure mapping: scenario and signal → chart lines, markers, price lines (§9.4)
 │       └── format.ts      # price, %, R:R and Copy Setup text
 ```
 
@@ -518,16 +519,41 @@ focuses that timeframe. A confluence badge (§8) sits at the strip's start.
 
 ### 9.4 Elliott chart
 
-- Candlestick series and a volume histogram on its own scale at 18% opacity.
+- Draws one scenario at a time: the one selected in the scenario tabs (§9.5).
+- Candlestick series and a volume histogram on its own scale at 18% opacity, each bar bullish
+  `#00c087` when close ≥ open and bearish `#f6465d` otherwise, in the bottom of the pane
+  (height fraction in `config.ts`).
 - Confirmed wave line: solid `#38bdf8` through the count's points, with markers `(0)…(5)`,
   `(A)`, `(B)`.
 - Projected wave line: dashed `#f59e0b` from the last point through the projected points, with
-  markers. Hidden when `Projections` is off.
+  markers. Hidden when `Projections` is off; its points stay on the time scale while hidden, so
+  toggling it never moves the visible range. Target ranges (`targetRange`) are not drawn in v1.
+- Markers sit above the candle at peaks and below it at troughs, in the line's colour (blue
+  confirmed, amber projected), with the same text for both: `(3)`, never `(3')`.
+- When a candle close re-analyses the timeframe, lines and markers are replaced whole; the
+  visible range stays.
 - Price lines, hidden when `Trade 1x` is off, the scenario has no setup, the signal is
   Invalidated (§6.4) or signals are paused (§3.4): `ENTRY 1x` (solid
   blue), `STOP LOSS` (dashed red), `TP1 [R:R 1:x.x]` (dashed green), `TP2 [R:R 1:x.x]` (dotted
-  dark green).
+  dark green). They are created once and updated in place on each ticker (`ENTRY 1x` moves with
+  the price, the R:R in the TP titles changes), never recreated per tick. Their prices are part of
+  the price scale's autoscale, so no visible level falls off the pane. `ENTRY 1x` blue is
+  `#3b82f6` and TP2 dark green `#0f7a5a` (`CHART_COLORS` in `config.ts`).
+- The candlestick series' own last-price line is hidden while `ENTRY 1x` is visible (same price)
+  and shown otherwise.
 - Resizes with its container (`autoSize`).
+- Initial visible range: from the count's (0) to its last projected point, with a margin; on a
+  Neutral timeframe, the last N candles (N in `config.ts`). It is recomputed when the focused
+  timeframe or the selected scenario changes, never on a candle or ticker update, so the user's
+  zoom and scroll survive live data.
+- Owns the chart context bar, the Neutral overlay and the paused overlay (§9.0).
+- Context bar text, segments joined by ` · `, confidence without decimals:
+  `BTC/USDT · 4H · Primary Scenario (83%) · Wave 3 in progress` (the last segment is the
+  scenario's wave in progress, §4.2); on a Neutral timeframe, `BTC/USDT · 1W · Neutral`.
+- Line legend at the end of the context bar: a swatch and name for each line currently drawn,
+  and only those: `Confirmed`, `Projected`, `Entry`, `Stop`, `TP1`, `TP2`. While paused the bar
+  is unchanged except that the trade entries drop out with their lines; the stale notice lives
+  only in the overlay.
 
 ### 9.5 Signal panel
 
