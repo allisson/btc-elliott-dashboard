@@ -395,8 +395,8 @@ rr2      = t·(TP2 − entry) / risk
 Δ%(x)    = (x − entry) / entry × 100
 ```
 
-R:R is signed: it is `≤ 0` once the price has reached or passed the target, and the UI then shows
-`passed` instead of `R:R 1:x.x` (§9.4–§9.6), since the target holds no reward left.
+R:R is signed: it is `≤ 0` once the price has reached or passed the target. Such a target is
+**passed**: it holds no reward left and the UI drops it (§6.4, §9.4–§9.6).
 
 ### 6.4 Status
 
@@ -411,8 +411,12 @@ a reload). Between a close and the next candle's first kline there is no open ca
 live price is checked. The stop loss is breached at `price ≤ SL` for LONG and `price ≥ SL` for SHORT
 (inclusive, like the (2)–(4) invalidations, so `risk` never reaches 0 on a live signal). The
 invalidation price uses the §5.5 conditions.
-- **ACTIVE**: not invalidated, trigger met, price strictly between SL and TP1, and `rr1 ≥ 1`.
-- **WATCHING**: any other case, e.g. trigger not met, price already past TP1, or `rr1 < 1`.
+- **ACTIVE**: not invalidated, trigger met, price on the right side of SL, and `rr ≥ 1` towards the
+  **target**: TP1 while it is ahead, TP2 once TP1 is passed (§6.3).
+- **WATCHING**: any other case, e.g. trigger not met or `rr < 1` towards the target.
+
+Past both targets the signal is spent: unless Invalidated, the scenario is shown as having no
+setup, with "No setup: both targets passed" (§9.3, §9.5).
 
 An Invalidated signal is dead: the metrics derived from `entry` (Δ%, R:R, position size, risk)
 are not shown, because with the price at or past the stop `risk` tends to zero and R:R explodes.
@@ -543,7 +547,7 @@ focuses that timeframe. A confluence badge (§8) sits at the strip's start.
 
 A card always shows its timeframe's **Primary Scenario**, like the confluence vote (§8); the
 scenario tabs (§9.5) change the chart and the panel, never the card. The status is the Primary
-signal's (§6.4); `NO SETUP` when the Primary Scenario has none, `NEUTRAL` on a Neutral timeframe,
+signal's (§6.4); `NO SETUP` when the Primary Scenario has none or its signal is spent, `NEUTRAL` on a Neutral timeframe,
 and `PAUSED` while signals are paused (§9.0).
 
 ### 9.4 Elliott chart
@@ -564,7 +568,7 @@ and `PAUSED` while signals are paused (§9.0).
 - Price lines, hidden when `Trade 1x` is off, the scenario has no setup, the signal is
   Invalidated (§6.4) or signals are paused (§3.4): `ENTRY 1x` (solid
   blue), `STOP LOSS` (dashed red), `TP1 [R:R 1:x.x]` (dashed green), `TP2 [R:R 1:x.x]` (dotted
-  dark green); a passed target reads `TP1 [passed]` (§6.3). They are created once and updated in place on each ticker (`ENTRY 1x` moves with
+  dark green); a passed target (§6.3) has no line and no legend entry. They are created once and updated in place on each ticker (`ENTRY 1x` moves with
   the price, the R:R in the TP titles changes), never recreated per tick. Their prices are part of
   the price scale's autoscale, so no visible level falls off the pane. `ENTRY 1x` blue is
   `#3b82f6` and TP2 dark green `#0f7a5a` (`CHART_COLORS` in `config.ts`).
@@ -594,15 +598,15 @@ Sections top to bottom, in this order:
   Alternative Scenario (§5), its tab is disabled and reads `Alternative Scenario · unavailable`;
   if a re-analysis removes the Alternative while it is selected, the selection returns to Primary.
 - Signal card: direction badge (`LONG 1x` / `SHORT 1x`), setup name, status, "1x, no leverage"
-  notice, **Copy Setup** button. Metric grid: Entry, Stop Loss (Δ%), TP1 (Δ%, R:R or `passed`, §6.3), TP2 (Δ%, R:R or `passed`),
+  notice, **Copy Setup** button. Metric grid: Entry, Stop Loss (Δ%), TP1 (Δ%, R:R), TP2 (Δ%, R:R), each dropped once passed (§6.3),
   Position (USDT and BTC), Risk (USDT and % of capital). A red box states the invalidation
   condition. When Invalidated (§6.4): Stop Loss, TP1 and TP2 show their prices only, without Δ%
   or R:R; Entry, Position and Risk show `—`; Copy Setup is disabled; the red box stays.
   Copy Setup writes the §9.6 text to the clipboard; the button then reads `Copied` (or
   `Copy failed` when the clipboard refuses) for `COPY_FEEDBACK_MS` in `config.ts`. `Generated` is
   the time of the click.
-  - Scenario with no setup (last point (3) or (A), §6.2): the card shows the "No setup: waiting
-    for …" text instead of the badge, metrics and Copy Setup; the red box stays.
+  - Scenario with no setup (last point (3) or (A), §6.2) or a spent signal (§6.4): the card shows
+    the "No setup: …" text instead of the badge, metrics and Copy Setup; the red box stays.
   - Neutral timeframe: both tabs are disabled and the card reads "<TF> is Neutral: no valid
     count"; the checklist and the Fibonacci box are hidden; the risk inputs and the footer stay.
 - Risk inputs: Capital (USDT), Risk per trade (%) (§7). Each field keeps the text as typed, and
@@ -639,8 +643,7 @@ Generated: <YYYY-MM-DD HH:mm UTC>
 Not financial advice. 1x, no leverage.
 ```
 
-When capped, the Risk line ends with ` (capped by capital)`. A passed target (§6.3) ends its line
-with `passed` instead of `R:R 1:<x.x>`.
+When capped, the Risk line ends with ` (capped by capital)`. A passed target (§6.3) has no line.
 
 ---
 

@@ -183,10 +183,31 @@ describe.each(sides)('evaluateSignal ($side)', ({ s, flip, map }) => {
     expect(statusAt([100, 200, 180], 130).status).toBe('WATCHING');
   });
 
-  it.each([200, 205])('is WATCHING at or past TP1 (%i), with rr1 ≤ 0', (price) => {
-    const signal = statusAt(SETUP1, price);
-    expect(signal.status).toBe('WATCHING');
+  // A shallow Wave 2 (0.4) puts TP2 at 321.8 (mirror 678.2). Past TP1 at 200 and 205, rr2 ≥ 1 on both
+  // sides (bullish 121.8 / 100.5, bearish 121.8 / 104.5 at 200); at 215 it is below 1.
+  const SHALLOW = [100, 200, 160] as const;
+
+  it.each([200, 205])('at or past TP1 (%i), TP2 is the target: ACTIVE with rr2 ≥ 1', (price) => {
+    const signal = statusAt(SHALLOW, price);
     expect(signal.rr1).toBeLessThanOrEqual(0);
+    expect(signal.rr2).toBeGreaterThanOrEqual(1);
+    expect(signal.status).toBe('ACTIVE');
+  });
+
+  it('past TP1 with rr2 < 1 is WATCHING', () => {
+    const signal = statusAt(SHALLOW, 215);
+    expect(signal.rr2).toBeLessThan(1);
+    expect(signal.status).toBe('WATCHING');
+  });
+
+  it('past TP1 with the trigger not met is WATCHING', () => {
+    expect(statusAt([100, 200, 180], 201).status).toBe('WATCHING');
+  });
+
+  it('past both targets is WATCHING, with both R:R ≤ 0', () => {
+    const signal = statusAt(SHALLOW, 330);
+    expect(signal.rr2).toBeLessThanOrEqual(0);
+    expect(signal.status).toBe('WATCHING');
   });
 
   it('is WATCHING when rr1 < 1', () => {

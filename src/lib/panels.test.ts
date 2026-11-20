@@ -55,6 +55,19 @@ const signal = (over: Partial<Signal> = {}): Signal => ({
 const position: PositionSize = { positionUsd: 297.02970297, positionBtc: 1.98019802, actualRiskUsd: 10, actualRiskPercent: 1, capped: false };
 
 describe('scenarioView', () => {
+  it('past both targets there is no signal, with the reason', () => {
+    const v = scenarioView(analysis(), 'primary', 310, { high: 310, low: 310 });
+    expect(v.signal).toBeNull();
+    expect(v.noSetup).toBe('No setup: both targets passed');
+    expect(stripCard(analysis(), 310, { high: 310, low: 310 }, false).status).toBe('NO SETUP');
+  });
+
+  it('past both targets but breached since the close: still Invalidated', () => {
+    const v = scenarioView(analysis(), 'primary', 310, { high: 310, low: 99 });
+    expect(v.signal?.status).toBe('INVALIDATED');
+    expect(v.noSetup).toBeNull();
+  });
+
   it('evaluates the selected scenario against the live price and its live rules', () => {
     const v = scenarioView(analysis(), 'primary', 149, quiet);
     expect(v.scenario).toBe(bullish);
@@ -169,9 +182,10 @@ describe('metricGrid', () => {
     expect(metricGrid(short, position).slice(1, 4).map((m) => m.detail)).toEqual(['+10.00%', '-10.00% · R:R 1:1.0', '-20.00% · R:R 1:2.0']);
   });
 
-  it('reads "passed" for a target behind the entry (SHORT past TP1)', () => {
+  it('drops a target the price already passed (SHORT past TP1)', () => {
     const short = signal({ side: 'SHORT', status: 'WATCHING', entry: 100, stopLoss: 110, takeProfit1: 101, takeProfit2: 80, rr1: -0.1, rr2: 2 });
-    expect(metricGrid(short, position).slice(2, 4).map((m) => m.detail)).toEqual(['+1.00% · passed', '-20.00% · R:R 1:2.0']);
+    expect(metricGrid(short, position).map((m) => m.label)).toEqual(['Entry', 'Stop Loss', 'TP2', 'Position', 'Risk']);
+    expect(metricGrid(short, position)[2].detail).toBe('-20.00% · R:R 1:2.0');
   });
 });
 

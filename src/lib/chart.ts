@@ -68,13 +68,15 @@ function markers(chain: readonly WavePoint[], from: number, color: string): Wave
   });
 }
 
+// §6.4: a target the price already passed has no line.
 function priceLines(signal: Signal): PriceLineSpec[] {
-  return [
+  const lines: PriceLineSpec[] = [
     { id: 'entry', price: signal.entry, title: 'ENTRY 1x', color: CHART_COLORS.entry, style: 'solid' },
     { id: 'stopLoss', price: signal.stopLoss, title: 'STOP LOSS', color: CHART_COLORS.stopLoss, style: 'dashed' },
     { id: 'takeProfit1', price: signal.takeProfit1, title: `TP1 [${formatRR(signal.rr1)}]`, color: CHART_COLORS.takeProfit1, style: 'dashed' },
     { id: 'takeProfit2', price: signal.takeProfit2, title: `TP2 [${formatRR(signal.rr2)}]`, color: CHART_COLORS.takeProfit2, style: 'dotted' },
   ];
+  return lines.filter((l) => (l.id === 'takeProfit1' ? signal.rr1 > 0 : l.id === 'takeProfit2' ? signal.rr2 > 0 : true));
 }
 
 const LEGEND_NAMES: Record<PriceLineSpec['id'], string> = { entry: 'Entry', stopLoss: 'Stop', takeProfit1: 'TP1', takeProfit2: 'TP2' };

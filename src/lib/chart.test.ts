@@ -109,9 +109,10 @@ describe('chartModel price lines', () => {
     expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Projected', 'Entry', 'Stop', 'TP1', 'TP2']);
   });
 
-  it('titles a passed target "passed"', () => {
-    const lines = chartModel(input({ signal: { ...signal, status: 'WATCHING', rr1: -0.2 } })).priceLines;
-    expect(lines[2].title).toBe('TP1 [passed]');
+  it('drops the line of a target the price already passed', () => {
+    const m = chartModel(input({ signal: { ...signal, status: 'WATCHING', rr1: -0.2 } }));
+    expect(m.priceLines.map((l) => l.id)).toEqual(['entry', 'stopLoss', 'takeProfit2']);
+    expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Projected', 'Entry', 'Stop', 'TP2']);
   });
 
   it('keeps the lines for a Watching signal', () => {

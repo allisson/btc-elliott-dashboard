@@ -121,11 +121,15 @@ A count at (3) or (A) has no setup; the panel says which wave has to complete fi
 With `entry` = the live price:
 
 ```
-risk = |entry − SL|      rr1 = |TP1 − entry| / risk      rr2 = |TP2 − entry| / risk
+risk = |entry − SL|      rr = t·(TP − entry) / risk      t = +1 LONG, −1 SHORT
 ```
 
-- **ACTIVE**: trigger met, price strictly between the stop and TP1, and `rr1 ≥ 1`.
-- **WATCHING**: anything else (trigger not met, price already past TP1, or `rr1 < 1`).
+A target the price has already reached or passed (`rr ≤ 0`) is dropped from the panel, the chart
+and Copy Setup. The **target** is TP1 while it is ahead, then TP2.
+
+- **ACTIVE**: trigger met, price on the right side of the stop, and `rr ≥ 1` towards the target.
+- **WATCHING**: anything else (trigger not met, or `rr < 1` towards the target).
+- Past both targets the signal is spent: the panel reads "No setup: both targets passed".
 - **INVALIDATED**: since the last candle close, price touched the stop loss or the invalidation
   price. It stays so until the next close re-analyses the timeframe.
 

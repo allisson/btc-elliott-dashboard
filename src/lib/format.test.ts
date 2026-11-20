@@ -28,8 +28,6 @@ describe('number formatting', () => {
 
   it('formats R:R, BTC, confidence and UTC time', () => {
     expect(formatRR(1.2376)).toBe('R:R 1:1.2');
-    expect(formatRR(0)).toBe('passed');
-    expect(formatRR(-0.29)).toBe('passed');
     expect(formatBtc(0.0044753)).toBe('0.00448');
     expect(formatConfidence(62.4)).toBe('62%');
     expect(formatUtc(Date.UTC(2026, 10, 20, 14, 5, 59))).toBe('2026-11-20 14:05 UTC');
@@ -93,9 +91,11 @@ describe('copySetupText', () => {
     expect(copySetupText(watching)!.split('\n')[1]).toBe('Status: WATCHING · Alternative Scenario (62%)');
   });
 
-  it('reads "passed" for a target behind the entry', () => {
+  it('leaves out a target the price already passed', () => {
     const passed = { ...input, signal: { ...signal, status: 'WATCHING' as const, rr1: -0.3 } };
-    expect(copySetupText(passed)!.split('\n')[4]).toBe('TP1:         100000.00  (+2.84%)  passed');
+    const lines = copySetupText(passed)!.split('\n');
+    expect(lines.some((l) => l.startsWith('TP1:'))).toBe(false);
+    expect(lines[4]).toBe('TP2:         104000.00  (+6.96%)  R:R 1:3.0');
   });
 
   it('is not available for an Invalidated signal', () => {
