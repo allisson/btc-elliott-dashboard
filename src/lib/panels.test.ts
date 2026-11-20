@@ -92,6 +92,20 @@ describe('scenarioView', () => {
     expect(v.rules[0].status).toBe('violated');
   });
 
+  it('a scenario shown as 0% confidence has no signal, with the reason; the count stays', () => {
+    const zero = analysis({ primary: { ...bullish, confidence: 0.49 } });
+    const v = scenarioView(zero, 'primary', 149, quiet, RISK);
+    expect(v.scenario).not.toBeNull();
+    expect(v.signal).toBeNull();
+    expect(v.noSetup).toBe('No setup: 0% confidence');
+    expect(stripCard(zero, 149, quiet, RISK, false).status).toBe('NO SETUP');
+  });
+
+  it('a scenario shown as 1% confidence keeps its signal', () => {
+    const v = scenarioView(analysis({ primary: { ...bullish, confidence: 0.5 } }), 'primary', 149, quiet, RISK);
+    expect(v.signal?.status).toBe('ACTIVE');
+  });
+
   it('has no signal and a waiting reason for a scenario with no setup', () => {
     const v = scenarioView(analysis({ primary: atWave3, primaryLevels: null }), 'primary', 150, quiet, RISK);
     expect(v.signal).toBeNull();

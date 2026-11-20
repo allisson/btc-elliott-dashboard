@@ -294,7 +294,7 @@ already past; each later leg lasts the mean. A point `n` candles after the last 
 
 `src/config.ts` holds every constant: thresholds (§3.1), `K = 8`, `TOLERANCE = 0.15`, the Fibonacci
 targets and ranges, setup trigger ranges (§6.2), `RSI_PERIOD = 14`,
-`MIN_RR1 = 1`, the 3 s reconnect delay, and the risk defaults and limits (§7).
+`MIN_RR1 = 1`, `MIN_SIGNAL_CONFIDENCE = 0.5`, the 3 s reconnect delay, and the risk defaults and limits (§7).
 
 ---
 
@@ -420,6 +420,10 @@ live price is checked. The invalidation price uses the §5.5 conditions.
 Past both targets the signal is spent: unless Invalidated, the scenario is shown as having no
 setup, with "No setup: both targets passed" (§9.3, §9.5).
 
+A scenario with a setup whose confidence is below `MIN_SIGNAL_CONFIDENCE = 0.5`, i.e. shown as
+`0%`, has no signal: its count, thesis and invalidation stay, and it is shown as having no setup,
+with "No setup: 0% confidence" (§9.3, §9.5).
+
 An Invalidated signal is dead: the count it trades no longer holds, so the metrics derived from
 `entry` (stop loss, Δ%, R:R, position size, risk) are not shown. The targets stay visible for
 reference (§9.5) and Copy Setup is disabled (§9.6). A Watching signal
@@ -530,6 +534,8 @@ Desktop (`lg`, ≥ 1024 px): one screen, no page scroll.
 | projected wave | `#f59e0b` |
 | accent | `#f0b90b` |
 
+The page declares `color-scheme: dark`, so native scrollbars and form controls are dark too.
+
 ### 9.2 Header
 
 - Left: Bitcoin icon, `BTC/USDT`, `Binance Spot` badge, live price that flashes green or red on
@@ -607,7 +613,8 @@ Sections top to bottom, in this order:
   Copy Setup writes the §9.6 text to the clipboard; the button then reads `Copied` (or
   `Copy failed` when the clipboard refuses) for `COPY_FEEDBACK_MS` in `config.ts`. `Generated` is
   the time of the click.
-  - Scenario with no setup (last point (3) or (A), §6.2) or a spent signal (§6.4): the card shows
+  - Scenario with no setup (last point (3) or (A), §6.2), a spent signal or a 0% confidence
+    scenario (§6.4): the card shows
     the "No setup: …" text instead of the badge, metrics and Copy Setup; the red box stays.
   - Neutral timeframe: both tabs are disabled and the card reads "<TF> is Neutral: no valid
     count"; the checklist and the Fibonacci box are hidden; the risk inputs and the footer stay.

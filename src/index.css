@@ -13,6 +13,10 @@
   --color-accent: #f0b90b;
 }
 
+html {
+  color-scheme: dark; /* native scrollbars and form controls follow the dark theme (§9.1) */
+}
+
 html,
 body,
 #root {
