@@ -1,0 +1,79 @@
+// Every tunable constant lives here (spec §4.6). No magic numbers elsewhere.
+import type { Timeframe } from './types.ts';
+
+export const SYMBOL = 'BTCUSDT';
+
+// §3.1
+export interface TimeframeConfig {
+  id: Timeframe;
+  label: string;
+  interval: string;
+  seconds: number;
+  zigzagThreshold: number; // fraction, e.g. 0.018 = 1.8%
+}
+
+export const TIMEFRAMES: readonly TimeframeConfig[] = [
+  { id: '1h', label: '1H', interval: '1h', seconds: 3_600, zigzagThreshold: 0.018 },
+  { id: '4h', label: '4H', interval: '4h', seconds: 14_400, zigzagThreshold: 0.032 },
+  { id: '1d', label: '1D', interval: '1d', seconds: 86_400, zigzagThreshold: 0.055 },
+  { id: '1w', label: '1W', interval: '1w', seconds: 604_800, zigzagThreshold: 0.095 },
+];
+
+// §3.2, §3.3
+export const BINANCE_REST_BASE = 'https://api.binance.com/api/v3';
+export const BINANCE_WS_BASE = 'wss://stream.binance.com:9443/stream';
+export const KLINES_LIMIT = 1000;
+export const RECONNECT_DELAY_MS = 3_000;
+
+// §4.2
+export const K = 8;
+export const MIN_COUNT_PIVOTS = 3;
+export const MAX_COUNT_PIVOTS = 8;
+
+// §4.4
+export const TOLERANCE = 0.15;
+export const FIB_TARGETS = {
+  w2Retracement: [0.5, 0.618, 0.786],
+  w3Extension: [1.618, 2.618],
+  w4Retracement: [0.382, 0.5],
+  w5Extension: [1.0],
+  aRetracement: [0.382, 0.5],
+  bRetracement: [0.5, 0.618],
+} as const;
+
+// §4.5
+export const PROJECTION = {
+  w3Extension: 1.618,
+  w3Range: { min: 1.618, max: 2.618 },
+  w4Retracement: 0.382,
+  w5Extension: 1.0,
+  aRetracement: 0.382,
+  aRange: { min: 0.382, max: 0.5 },
+  bRetracement: 0.5,
+  cExtension: 1.0,
+  cRange: { min: 1.0, max: 1.618 },
+} as const;
+
+// §6.1
+export const RSI_PERIOD = 14;
+
+// §6.2 (written for s = +1; mirrored for s = −1)
+export const SETUP_TRIGGERS = {
+  setup1W2Retracement: { min: 0.382, max: 0.886 },
+  setup2W4Retracement: { min: 0.236, max: 0.5 },
+  setup3bBRetracement: { min: 0.45, max: 0.668 },
+} as const;
+
+export const SL_MULTIPLIERS = {
+  belowLevel: 0.995, // Setups 1 and 2 (LONG); mirrors to 1.005
+  aboveLevel: 1.008, // Setups 3a and 3b (SHORT); mirrors to 0.992
+} as const;
+
+export const SETUP_3B_TP2_EXTENSION = 1.618;
+
+// §6.4
+export const MIN_RR1 = 1;
+
+// §7
+export const RISK_DEFAULTS = { capital: 1000, riskPercent: 1 } as const;
+export const RISK_LIMITS = { minCapital: 0, minRiskPercent: 0.1, maxRiskPercent: 10 } as const;

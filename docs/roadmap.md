@@ -9,9 +9,21 @@ Phases run in order; each ends with its "done when" check plus `bun run test` gr
   Lightweight Charts v5 pinned to an exact version.
 - `src/types.ts` (§10) and `src/config.ts` (§4.6).
 - Layout from §2.1, with empty components rendering placeholders.
+- Three UX prototypes in `prototypes/{a,b,c}/`, served by `bun dev` at `/prototypes/a/` etc. and
+  excluded from the build. Each carries all of §9.2–§9.5 in the §9.1 palette and differs only in
+  arrangement and emphasis: A "Terminal" (chart left, signal panel right), B "Signal-first"
+  (signal card and confluence on top, chart below), C "Multi-timeframe grid" (2×2 mini charts,
+  signal panel as a drawer). They read one hand-written `prototypes/mock.ts` typed with
+  `src/types.ts`, show a fixed `PROTOTYPE · MOCK DATA` banner, are clickable (timeframe, scenario
+  tabs, toggles, risk inputs) and have a dev bar switching `live · offline · error` (§3.4). Desktop
+  first, checked at 390 px.
+- The user picks one; its layout is written into spec §9 and `prototypes/` is deleted, so no mock
+  data survives the phase ([ADR 0002](./adr/0002-no-synthetic-data-at-runtime.md)).
+  **Chosen: A "Terminal"** (spec §9.0).
 
-**Done when** `bun dev` serves a dark page with the four placeholder regions and
-`bun run test` runs one passing smoke test.
+**Done when** `bun dev` serves a dark page with the four placeholder regions,
+`bun run test` runs one passing smoke test, and the chosen prototype's layout is in spec §9 with
+`prototypes/` removed.
 
 ## Phase 1: ZigZag
 
