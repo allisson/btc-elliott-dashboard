@@ -95,8 +95,17 @@ _Avoid_: flat, undefined
 
 **Setup**:
 A rule template stating which wave state is worth entering and where the stop loss and targets
-sit (Setup 1 Wave 2→3, Setup 2 Wave 4→5, Setup 3 Exhaustion/ABC), mirrored for both directions.
+sit (Setup 1 Wave 2→3, Setup 2 Wave 4→5, Setup 3a Wave 5 exhaustion, Setup 3b Wave B→C),
+mirrored for both directions.
 _Avoid_: strategy, signal (for the template)
+
+**Trigger**:
+The condition a setup measures at candle close that separates an Active signal from a Watching one.
+_Avoid_: condition, entry rule
+
+**Breach**:
+Price crossing a level that kills a scenario or a signal: its invalidation price or its stop loss.
+_Avoid_: hit, touch
 
 **Signal**:
 A concrete instance of a setup on one timeframe, with entry, stop loss, TP1, TP2 and a status.
