@@ -77,6 +77,9 @@ export const SETUP_3B_TP2_EXTENSION = 1.618;
 // §6.4
 export const MIN_RR1 = 1;
 
+// §8: smallest agreeing group that counts as Mixed Market (Strong = every timeframe agrees)
+export const CONFLUENCE_MIN_MIXED = 2;
+
 // §9.5, §9.6: decimals shown for each kind of number
 export const DISPLAY_DECIMALS = { price: 2, percent: 2, rr: 1, btc: 5, usdt: 2, confidence: 0 } as const;
 

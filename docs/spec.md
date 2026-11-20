@@ -442,7 +442,12 @@ capital)".
   - 4/4: **Strong Confluence** (bullish or bearish).
   - 3/4: **Mixed Market**, majority direction shown.
   - 2/4: **Mixed Market**, majority direction shown, or "split" on a 2–2 tie.
-  - 1/4 or 0/4: **No Confluence**.
+  - 1/4 or 0/4: **No Confluence**; `majority` is `null`, including on a 1–1 tie.
+- Strong means `agree` equals the number of timeframes; the Mixed floor is
+  `CONFLUENCE_MIN_MIXED` (2) in `config.ts`.
+- Votes are cast at candle close (§6.5): a Primary Scenario breached by the ticker keeps its vote
+  until its timeframe's next close.
+- Engine entry point: `confluence(analyses: Record<Timeframe, TimeframeAnalysis>): Confluence`.
 
 ---
 

@@ -126,7 +126,13 @@ The amount committed to a signal so that hitting its stop loss loses exactly the
 never exceeding the user's capital.
 _Avoid_: lot, allocation, stake
 
+**Confluence vote**:
+The Scenario direction of a non-Neutral timeframe's Primary Scenario. Neutral timeframes do not
+vote, and the Alternative Scenario never votes.
+_Avoid_: signal, bias
+
 **Confluence**:
-How many timeframes agree with the majority direction of their Primary Scenarios; 4/4 is Strong
-Confluence, 3/4 or 2/4 is Mixed Market.
+How many of the four timeframes cast the same confluence vote, counted on the largest group:
+4/4 is Strong Confluence; 3/4 or 2/4 is Mixed Market, with the majority direction or, on a 2–2
+tie, a split; 1/4 or 0/4 is No Confluence, with no majority direction.
 _Avoid_: consensus, alignment
