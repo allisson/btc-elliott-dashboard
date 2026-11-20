@@ -389,10 +389,14 @@ Formulas are written for `s = +1`. For `s = −1`, mirror the direction and swap
 
 ```
 risk     = |entry − SL|
-rr1      = |TP1 − entry| / risk
-rr2      = |TP2 − entry| / risk
+t        = +1 for LONG, −1 for SHORT
+rr1      = t·(TP1 − entry) / risk
+rr2      = t·(TP2 − entry) / risk
 Δ%(x)    = (x − entry) / entry × 100
 ```
+
+R:R is signed: it is `≤ 0` once the price has reached or passed the target, and the UI then shows
+`passed` instead of `R:R 1:x.x` (§9.4–§9.6), since the target holds no reward left.
 
 ### 6.4 Status
 
@@ -560,7 +564,7 @@ and `PAUSED` while signals are paused (§9.0).
 - Price lines, hidden when `Trade 1x` is off, the scenario has no setup, the signal is
   Invalidated (§6.4) or signals are paused (§3.4): `ENTRY 1x` (solid
   blue), `STOP LOSS` (dashed red), `TP1 [R:R 1:x.x]` (dashed green), `TP2 [R:R 1:x.x]` (dotted
-  dark green). They are created once and updated in place on each ticker (`ENTRY 1x` moves with
+  dark green); a passed target reads `TP1 [passed]` (§6.3). They are created once and updated in place on each ticker (`ENTRY 1x` moves with
   the price, the R:R in the TP titles changes), never recreated per tick. Their prices are part of
   the price scale's autoscale, so no visible level falls off the pane. `ENTRY 1x` blue is
   `#3b82f6` and TP2 dark green `#0f7a5a` (`CHART_COLORS` in `config.ts`).
@@ -590,7 +594,7 @@ Sections top to bottom, in this order:
   Alternative Scenario (§5), its tab is disabled and reads `Alternative Scenario · unavailable`;
   if a re-analysis removes the Alternative while it is selected, the selection returns to Primary.
 - Signal card: direction badge (`LONG 1x` / `SHORT 1x`), setup name, status, "1x, no leverage"
-  notice, **Copy Setup** button. Metric grid: Entry, Stop Loss (Δ%), TP1 (Δ%, R:R), TP2 (Δ%, R:R),
+  notice, **Copy Setup** button. Metric grid: Entry, Stop Loss (Δ%), TP1 (Δ%, R:R or `passed`, §6.3), TP2 (Δ%, R:R or `passed`),
   Position (USDT and BTC), Risk (USDT and % of capital). A red box states the invalidation
   condition. When Invalidated (§6.4): Stop Loss, TP1 and TP2 show their prices only, without Δ%
   or R:R; Entry, Position and Risk show `—`; Copy Setup is disabled; the red box stays.
@@ -635,7 +639,8 @@ Generated: <YYYY-MM-DD HH:mm UTC>
 Not financial advice. 1x, no leverage.
 ```
 
-When capped, the Risk line ends with ` (capped by capital)`.
+When capped, the Risk line ends with ` (capped by capital)`. A passed target (§6.3) ends its line
+with `passed` instead of `R:R 1:<x.x>`.
 
 ---
 

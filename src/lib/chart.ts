@@ -72,8 +72,8 @@ function priceLines(signal: Signal): PriceLineSpec[] {
   return [
     { id: 'entry', price: signal.entry, title: 'ENTRY 1x', color: CHART_COLORS.entry, style: 'solid' },
     { id: 'stopLoss', price: signal.stopLoss, title: 'STOP LOSS', color: CHART_COLORS.stopLoss, style: 'dashed' },
-    { id: 'takeProfit1', price: signal.takeProfit1, title: `TP1 [R:R ${formatRR(signal.rr1)}]`, color: CHART_COLORS.takeProfit1, style: 'dashed' },
-    { id: 'takeProfit2', price: signal.takeProfit2, title: `TP2 [R:R ${formatRR(signal.rr2)}]`, color: CHART_COLORS.takeProfit2, style: 'dotted' },
+    { id: 'takeProfit1', price: signal.takeProfit1, title: `TP1 [${formatRR(signal.rr1)}]`, color: CHART_COLORS.takeProfit1, style: 'dashed' },
+    { id: 'takeProfit2', price: signal.takeProfit2, title: `TP2 [${formatRR(signal.rr2)}]`, color: CHART_COLORS.takeProfit2, style: 'dotted' },
   ];
 }
 

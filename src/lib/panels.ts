@@ -93,7 +93,7 @@ export function metricGrid(signal: Signal, position: PositionSize): Metric[] {
   const level = (name: string, price: number, rr: number | null): Metric => ({
     label: name,
     value: formatPrice(price),
-    detail: dead ? null : rr === null ? delta(price) : `${delta(price)} · R:R ${formatRR(rr)}`,
+    detail: dead ? null : rr === null ? delta(price) : `${delta(price)} · ${formatRR(rr)}`,
   });
   const dash = (name: string): Metric => ({ label: name, value: '—', detail: null });
   const capped = position.capped ? ' (capped by capital)' : '';
