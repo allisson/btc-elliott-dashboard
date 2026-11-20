@@ -211,9 +211,19 @@ formula and measured values. A rule that does not apply yet (e.g. Rule 3 when m 
 checklist entry.
 
 Every count that survives generation has only `VALID` and `NOT YET` checks, since a violation
-discards the candidate. `VIOLATED` appears only when the live price breaches the scenario's
-invalidation price (§5.5) and marks the rule that breach violates; the exact mapping is settled in
-Phase 4.
+discards the candidate. `VIOLATED` appears only after a breach (§6.4) since the last candle close,
+per scenario, whether or not it has a setup:
+
+| Last point | Breach | Rule shown `VIOLATED` |
+| :-- | :-- | :-- |
+| (2) | invalidation price P0 | Rule 1 |
+| (3), (4) | invalidation price P1 | Rule 3 (at (3) it goes from `NOT YET` to `VIOLATED`) |
+| (4), Rule 2 pending | beyond `P4 + s·len(W3)` (Wave 5 already longer than Wave 3) | Rule 2 |
+| (5), (A), (B) | invalidation price P5 | none: the impulse is not over, no rule broke |
+
+A stop-loss breach that does not breach the invalidation price (possible only in Setup 3b) marks no
+rule. The Rule 2 breach changes only the checklist: the scenario's invalidation price stays P1, and
+past that level the price is already beyond TP2, so the signal is Watching.
 
 Detail strings show prices and wave lengths with 2 decimals, e.g.
 `s·(P2 − P0) > 0 · P2 98.00 vs P0 95.00`.
@@ -325,7 +335,10 @@ Per timeframe:
 
 Wilder RSI over closes with period 14. For a count ending at (5), divergence exists when
 `s·(P5 − P3) > 0` and `s·(RSI[P5.index] − RSI[P3.index]) < 0`. If RSI is undefined at `P3.index`
-(fewer than 15 candles before it), there is no divergence.
+(fewer than 15 candles up to and including it), there is no divergence.
+
+The first RSI value is at index 14, seeded with the simple mean of the first 14 gains and losses,
+then Wilder smoothing. When the average loss is 0, RSI is 100; when both averages are 0, RSI is 50.
 
 ### 6.2 Setups
 
@@ -340,8 +353,13 @@ Formulas are written for `s = +1`. For `s = −1`, mirror the direction and swap
 | 3a: Wave 5 exhaustion | (5) | RSI divergence (§6.1) | SHORT | `P5 × 1.008` | `P4` | `PA'` |
 | 3b: Wave B→C | (B) | B retracement ∈ [0.45, 0.668] (0.5–0.618 ± 0.05) | SHORT | `PB × 1.008` | `PA` | `PB + 1.618·A` |
 
-- Setup 3a: if `PA'` is not beyond `P4` in the trade's direction, swap TP1 and TP2 so that TP1 is
-  always the nearer target.
+- Any setup: if TP2 is not beyond TP1 in the trade's direction, swap them so that TP1 is always
+  the nearer target. In practice this happens in Setup 3a (`PA'` not beyond `P4`) and Setup 2
+  (`P5'` short of `P3` when `len(W1) < len(W4)`, or when the Rule 2 cap applies); Setups 1 and 3b
+  cannot invert.
+- Setup 2: "Rule 3 holds" is always true for a surviving count (§4.3), so the trigger measures only
+  the W4 retracement. A live Rule 3 breach is an invalidation (§6.4).
+- Setup 2 uses the scenario's `P5'`, capped when Rule 2 is pending (§4.5).
 - Last point (3) or (A): no setup applies. The scenario is shown with no levels and the wave whose
   completion unlocks the next setup: "No setup: waiting for Wave 4 to complete (then Setup 2)"
   for (3), "No setup: waiting for Wave B to complete (then Setup 3b)" for (A).
@@ -363,6 +381,12 @@ Evaluated on every ticker update for a scenario that has a setup:
 
 - **INVALIDATED**: since the last candle close, the live price has breached the stop loss or the
   scenario's invalidation price. It stays Invalidated until the next close re-analyses the timeframe.
+
+A **breach** since the last close is checked against the live price and the extremes of that
+timeframe's open candle (its high and low cover every trade since the close, including those before
+a reload). The stop loss is breached at `price ≤ SL` for LONG and `price ≥ SL` for SHORT
+(inclusive, like the (2)–(4) invalidations, so `risk` never reaches 0 on a live signal). The
+invalidation price uses the §5.5 conditions.
 - **ACTIVE**: not invalidated, trigger met, price strictly between SL and TP1, and `rr1 ≥ 1`.
 - **WATCHING**: any other case, e.g. trigger not met, price already past TP1, or `rr1 < 1`.
 
@@ -389,7 +413,9 @@ Inputs in the Signal Panel, shared by every timeframe and scenario and stored in
 | Input | Default | Valid range | Empty or invalid |
 | :-- | --: | :-- | :-- |
 | Capital (USDT) | 1000 | > 0 | default |
-| Risk per trade (%) | 1 | 0.1 – 10 | default |
+| Risk per trade (%) | 1 | 0.1 – 10, inclusive | default |
+
+An out-of-range value falls back to the default; it is not clamped (risk 15 becomes 1, not 10).
 
 The stop loss always stays at the setup's level. The position is sized to it:
 
@@ -516,7 +542,10 @@ Sections top to bottom, in this order:
 ### 9.6 Copy Setup
 
 Not available for an Invalidated signal (§6.4). Plain text, no markdown. Prices with 2 decimals, Δ% signed with 2 decimals, R:R with 1 decimal,
-BTC with 5 decimals, USDT amounts with 2 decimals.
+BTC with 5 decimals, USDT amounts with 2 decimals. Numbers have no thousands separator
+(`97234.50`), so they paste into an order form; the UI groups them (`97,234.50`). Signs use the
+ASCII `+` and `-`. `<invalidation text>` is the scenario's invalidation reason (§5.5), verbatim.
+`<conf>` has no decimals (`62%`); `<r>`, the actual risk as % of capital, has 2 (`1.00%`).
 
 ```
 BTC/USDT · 4H · LONG 1x · Setup 1 (Wave 2→3)

@@ -77,6 +77,9 @@ export const SETUP_3B_TP2_EXTENSION = 1.618;
 // §6.4
 export const MIN_RR1 = 1;
 
+// §9.5, §9.6: decimals shown for each kind of number
+export const DISPLAY_DECIMALS = { price: 2, percent: 2, rr: 1, btc: 5, usdt: 2, confidence: 0 } as const;
+
 // §7
 export const RISK_DEFAULTS = { capital: 1000, riskPercent: 1 } as const;
 export const RISK_LIMITS = { minCapital: 0, minRiskPercent: 0.1, maxRiskPercent: 10 } as const;
