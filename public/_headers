@@ -1,0 +1,15 @@
+# The style-src hash is the <style> Lightweight Charts 5.3.0 injects for its attribution logo.
+# Upgrading the library can change it: check the console for a CSP error (docs/deployment.md).
+/*
+  Content-Security-Policy: default-src 'self'; style-src 'self' 'sha256-3pRED1tOXas1FXFoPb9TGCjmYe9XQsmO9OV23khV2nY='; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
