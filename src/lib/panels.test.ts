@@ -168,6 +168,11 @@ describe('metricGrid', () => {
     const short = signal({ side: 'SHORT', entry: 100, stopLoss: 110, takeProfit1: 90, takeProfit2: 80, rr1: 1, rr2: 2 });
     expect(metricGrid(short, position).slice(1, 4).map((m) => m.detail)).toEqual(['+10.00%', '-10.00% · R:R 1:1.0', '-20.00% · R:R 1:2.0']);
   });
+
+  it('reads "passed" for a target behind the entry (SHORT past TP1)', () => {
+    const short = signal({ side: 'SHORT', status: 'WATCHING', entry: 100, stopLoss: 110, takeProfit1: 101, takeProfit2: 80, rr1: -0.1, rr2: 2 });
+    expect(metricGrid(short, position).slice(2, 4).map((m) => m.detail)).toEqual(['+1.00% · passed', '-20.00% · R:R 1:2.0']);
+  });
 });
 
 describe('ruleRows', () => {

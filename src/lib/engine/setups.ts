@@ -79,13 +79,14 @@ export function noSetupReason(scenario: Scenario): string | null {
   return null;
 }
 
-// §6.3
+// §6.3: R:R is signed, ≤ 0 once the price has reached or passed the target.
 export function priceMetrics(levels: SignalLevels, entry: number): { risk: number; rr1: number; rr2: number } {
+  const t = tradeSign(levels);
   const risk = Math.abs(entry - levels.stopLoss);
   return {
     risk,
-    rr1: Math.abs(levels.takeProfit1 - entry) / risk,
-    rr2: Math.abs(levels.takeProfit2 - entry) / risk,
+    rr1: (t * (levels.takeProfit1 - entry)) / risk,
+    rr2: (t * (levels.takeProfit2 - entry)) / risk,
   };
 }
 

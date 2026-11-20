@@ -146,6 +146,23 @@ describe('price metrics', () => {
     expect(rr1).toBeCloseTo(60 / 44.5, 9);
     expect(rr2).toBeCloseTo(161.8 / 44.5, 9);
   });
+
+  it('is negative for a target the price already passed (LONG)', () => {
+    const { rr1, rr2 } = priceMetrics(levels, 240);
+    expect(rr1).toBeCloseTo(-40 / 140.5, 9);
+    expect(rr2).toBeCloseTo(61.8 / 140.5, 9);
+  });
+
+  it('is negative for a target the price already passed (SHORT)', () => {
+    const short = { ...levels, side: 'SHORT', stopLoss: 904.5, takeProfit1: 800, takeProfit2: 698.2 } as const;
+    const { rr1, rr2 } = priceMetrics(short, 760);
+    expect(rr1).toBeCloseTo(-40 / 144.5, 9);
+    expect(rr2).toBeCloseTo(61.8 / 144.5, 9);
+  });
+
+  it('is zero at the target', () => {
+    expect(priceMetrics(levels, 200).rr1).toBe(0);
+  });
 });
 
 describe.each(sides)('evaluateSignal ($side)', ({ s, flip, map }) => {
@@ -166,8 +183,10 @@ describe.each(sides)('evaluateSignal ($side)', ({ s, flip, map }) => {
     expect(statusAt([100, 200, 180], 130).status).toBe('WATCHING');
   });
 
-  it.each([200, 205])('is WATCHING at or past TP1 (%i)', (price) => {
-    expect(statusAt(SETUP1, price).status).toBe('WATCHING');
+  it.each([200, 205])('is WATCHING at or past TP1 (%i), with rr1 ≤ 0', (price) => {
+    const signal = statusAt(SETUP1, price);
+    expect(signal.status).toBe('WATCHING');
+    expect(signal.rr1).toBeLessThanOrEqual(0);
   });
 
   it('is WATCHING when rr1 < 1', () => {
