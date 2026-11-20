@@ -293,8 +293,9 @@ Formulas are written for `s = +1`. For `s = −1`, mirror the direction and swap
 
 - Setup 3a: if `PA'` is not beyond `P4` in the trade's direction, swap TP1 and TP2 so that TP1 is
   always the nearer target.
-- Last point (3) or (A): no setup applies. The scenario is shown with "No setup: waiting for
-  <next wave>" and no levels.
+- Last point (3) or (A): no setup applies. The scenario is shown with no levels and the wave whose
+  completion unlocks the next setup: "No setup: waiting for Wave 4 to complete (then Setup 2)"
+  for (3), "No setup: waiting for Wave B to complete (then Setup 3b)" for (A).
 
 ### 6.3 Price metrics
 
@@ -315,6 +316,11 @@ Evaluated on every ticker update for a scenario that has a setup:
   scenario's invalidation price. It stays Invalidated until the next close re-analyses the timeframe.
 - **ACTIVE**: not invalidated, trigger met, price strictly between SL and TP1, and `rr1 ≥ 1`.
 - **WATCHING**: any other case, e.g. trigger not met, price already past TP1, or `rr1 < 1`.
+
+An Invalidated signal is dead: the metrics derived from `entry` (Δ%, R:R, position size, risk)
+are not shown, because with the price at or past the stop `risk` tends to zero and R:R explodes.
+The levels stay visible for reference (§9.5) and Copy Setup is disabled (§9.6). A Watching signal
+keeps its R:R visible: it explains why entry is not worth it.
 
 ### 6.5 What updates when
 
@@ -434,7 +440,8 @@ focuses that timeframe. A confluence badge (§8) sits at the strip's start.
   `(A)`, `(B)`.
 - Projected wave line: dashed `#f59e0b` from the last point through the projected points, with
   markers. Hidden when `Projections` is off.
-- Price lines, hidden when `Trade 1x` is off or the scenario has no setup: `ENTRY 1x` (solid
+- Price lines, hidden when `Trade 1x` is off, the scenario has no setup, the signal is
+  Invalidated (§6.4) or signals are paused (§3.4): `ENTRY 1x` (solid
   blue), `STOP LOSS` (dashed red), `TP1 [R:R 1:x.x]` (dashed green), `TP2 [R:R 1:x.x]` (dotted
   dark green).
 - Resizes with its container (`autoSize`).
@@ -448,7 +455,8 @@ Sections top to bottom, in this order:
 - Signal card: direction badge (`LONG 1x` / `SHORT 1x`), setup name, status, "1x, no leverage"
   notice, **Copy Setup** button. Metric grid: Entry, Stop Loss (Δ%), TP1 (Δ%, R:R), TP2 (Δ%, R:R),
   Position (USDT and BTC), Risk (USDT and % of capital). A red box states the invalidation
-  condition.
+  condition. When Invalidated (§6.4): Stop Loss, TP1 and TP2 show their prices only, without Δ%
+  or R:R; Entry, Position and Risk show `—`; Copy Setup is disabled; the red box stays.
 - Risk inputs: Capital (USDT), Risk per trade (%) (§7).
 - Rules checklist: Rule 1, 2, 3 with `VALID` / `VIOLATED` / `NOT YET`, formula and measured
   values.
@@ -458,7 +466,7 @@ Sections top to bottom, in this order:
 
 ### 9.6 Copy Setup
 
-Plain text, no markdown. Prices with 2 decimals, Δ% signed with 2 decimals, R:R with 1 decimal,
+Not available for an Invalidated signal (§6.4). Plain text, no markdown. Prices with 2 decimals, Δ% signed with 2 decimals, R:R with 1 decimal,
 BTC with 5 decimals, USDT amounts with 2 decimals.
 
 ```
