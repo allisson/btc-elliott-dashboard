@@ -33,12 +33,13 @@ export interface ScenarioView {
   noSetup: string | null;
 }
 
-// One scenario of a timeframe against the live price and its open candle (§4.3, §6.4).
-export function scenarioView(analysis: TimeframeAnalysis, rank: Rank, price: number, openCandle: OpenCandle): ScenarioView {
+// One scenario of a timeframe against the live price, its open candle and the risk per trade, which
+// sets the stop (§4.3, §6.4, §7).
+export function scenarioView(analysis: TimeframeAnalysis, rank: Rank, price: number, openCandle: OpenCandle, riskPercent: number): ScenarioView {
   const scenario = rank === 'primary' ? analysis.primary : analysis.alternative;
   if (!scenario) return { scenario: null, signal: null, rules: [], noSetup: null };
   const levels = rank === 'primary' ? analysis.primaryLevels : analysis.alternativeLevels;
-  const signal = levels && evaluateSignal(scenario, levels, analysis.timeframe, price, openCandle);
+  const signal = levels && evaluateSignal(scenario, levels, analysis.timeframe, price, openCandle, riskPercent);
   // §6.4: past both targets the signal is spent; an Invalidated one stays visible.
   const spent = signal !== null && signal.status !== 'INVALIDATED' && signal.rr2 <= 0;
   return {
@@ -64,8 +65,8 @@ export interface StripCard {
 }
 
 // §9.3: always the Primary Scenario, like the confluence vote.
-export function stripCard(analysis: TimeframeAnalysis, price: number, openCandle: OpenCandle, paused: boolean): StripCard {
-  const { scenario, signal } = scenarioView(analysis, 'primary', price, openCandle);
+export function stripCard(analysis: TimeframeAnalysis, price: number, openCandle: OpenCandle, riskPercent: number, paused: boolean): StripCard {
+  const { scenario, signal } = scenarioView(analysis, 'primary', price, openCandle, riskPercent);
   if (!scenario) return { label: label(analysis.timeframe), direction: null, wave: null, status: 'NEUTRAL', confidence: null };
   return {
     label: label(analysis.timeframe),
@@ -89,7 +90,8 @@ export interface Metric {
   detail: string | null;
 }
 
-// §9.5: an Invalidated signal keeps its levels and drops what derives from the entry (§6.4).
+// §9.5: an Invalidated signal keeps its targets and drops what derives from the entry, the stop
+// included (§6.4, §7).
 export function metricGrid(signal: Signal, position: PositionSize): Metric[] {
   const dead = signal.status === 'INVALIDATED';
   const delta = (x: number) => formatDeltaPercent(deltaPercent(x, signal.entry));
@@ -99,11 +101,10 @@ export function metricGrid(signal: Signal, position: PositionSize): Metric[] {
     detail: dead ? null : rr === null ? delta(price) : `${delta(price)} · ${formatRR(rr)}`,
   });
   const dash = (name: string): Metric => ({ label: name, value: '—', detail: null });
-  const capped = position.capped ? ' (capped by capital)' : '';
 
   return [
     dead ? dash('Entry') : { label: 'Entry', value: formatPrice(signal.entry), detail: null },
-    level('Stop Loss', signal.stopLoss, null),
+    dead ? dash('Stop Loss') : level('Stop Loss', signal.stopLoss, null),
     // §6.4: a target the price already passed is dropped.
     ...(signal.rr1 > 0 ? [level('TP1', signal.takeProfit1, signal.rr1)] : []),
     ...(signal.rr2 > 0 ? [level('TP2', signal.takeProfit2, signal.rr2)] : []),
@@ -112,8 +113,8 @@ export function metricGrid(signal: Signal, position: PositionSize): Metric[] {
       ? dash('Risk')
       : {
           label: 'Risk',
-          value: `${formatUsdt(position.actualRiskUsd)} USDT`,
-          detail: `${formatPercent(position.actualRiskPercent)}% of capital${capped}`,
+          value: `${formatUsdt(position.riskUsd)} USDT`,
+          detail: `${formatPercent(position.riskPercent)}% of capital`,
         },
   ];
 }

@@ -49,8 +49,9 @@ and the phase's "done when" check holds.
 - Counts, scenarios and setups are recomputed only on candle close. Ticker updates refresh only
   price-dependent metrics (entry, Δ%, R:R, status, position size). See spec §6.5.
 - Every setup is mirrored for both directions. A change to one side needs the mirrored test.
-- The stop loss always sits at the setup's level. User risk changes the position size, never the
-  stop (spec §7).
+- The position is always the whole capital (1x). The risk per trade sets the stop loss, `risk%`
+  from the entry, so hitting it loses `risk%` of the capital (spec §7,
+  [ADR 0003](docs/adr/0003-stop-loss-at-risk-per-trade.md)).
 - Components are checked in the browser, not unit-tested. Describe what you verified there.
 - Out of scope for v1 (spec §1.1): execution, persistence, backtesting, alerts, other symbols, ML.
   Do not add them.

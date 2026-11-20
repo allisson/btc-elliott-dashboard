@@ -19,8 +19,8 @@ REST and WebSocket APIs, with no API key. It never places orders.
 - **1x signals**: four setups (Wave 2→3, Wave 4→5, Wave 5 exhaustion, Wave B→C), mirrored for
   LONG and SHORT, with entry, stop loss, TP1, TP2, R:R and an `ACTIVE` / `WATCHING` /
   `INVALIDATED` status updated on every tick.
-- **Position sizing**: from your capital and risk per trade, never above your capital. The stop
-  loss always stays at the setup's level.
+- **Position sizing**: the whole capital, 1x. The risk per trade sets the stop loss that far from
+  the entry, so hitting it loses exactly that share of the capital.
 - **Confluence**: the four timeframes' Primary Scenarios vote on a direction.
 - **Live, and honest when it is not**: candles and ticker stream over one WebSocket. When the
   stream drops, signals pause and the header says since when. When it comes back, history is
@@ -107,31 +107,34 @@ price: P0 for a count at (2), P1 at (3) and (4), the Wave 5 extreme at (5), (A) 
 ### 4. Setups and signals
 
 The scenario's last point picks the setup. Shown for a bullish impulse; a bearish one mirrors
-every direction and multiplier.
+every direction.
 
-| Setup | Last point | Trigger | Side | Stop loss | TP1 | TP2 |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| 1: Wave 2→3 | (2) | W2 retracement in [0.382, 0.886] | LONG | `P0 × 0.995` | P1 | Wave 3 at 1.618 |
-| 2: Wave 4→5 | (4) | W4 retracement in [0.236, 0.5] | LONG | `P1 × 0.995` | P3 | projected Wave 5 |
-| 3a: Wave 5 exhaustion | (5) | RSI(14) divergence between P3 and P5 | SHORT | `P5 × 1.008` | P4 | projected Wave A |
-| 3b: Wave B→C | (B) | B retracement in [0.45, 0.668] | SHORT | `PB × 1.008` | PA | `PB + 1.618 × A` |
+| Setup | Last point | Trigger | Side | TP1 | TP2 |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 1: Wave 2→3 | (2) | W2 retracement in [0.382, 0.886] | LONG | P1 | Wave 3 at 1.618 |
+| 2: Wave 4→5 | (4) | W4 retracement in [0.236, 0.5] | LONG | P3 | projected Wave 5 |
+| 3a: Wave 5 exhaustion | (5) | RSI(14) divergence between P3 and P5 | SHORT | P4 | projected Wave A |
+| 3b: Wave B→C | (B) | B retracement in [0.45, 0.668] | SHORT | PA | `PB + 1.618 × A` |
 
 A count at (3) or (A) has no setup; the panel says which wave has to complete first.
 
 With `entry` = the live price:
 
 ```
-risk = |entry − SL|      rr = t·(TP − entry) / risk      t = +1 LONG, −1 SHORT
+risk = entry × risk% / 100      SL = entry − t·risk      rr = t·(TP − entry) / risk
+t = +1 LONG, −1 SHORT
 ```
+
+The stop loss moves with the live price: it is where to put the stop when entering now. The chart
+also draws the scenario's invalidation price, where the count stops holding.
 
 A target the price has already reached or passed (`rr ≤ 0`) is dropped from the panel, the chart
 and Copy Setup. The **target** is TP1 while it is ahead, then TP2.
 
-- **ACTIVE**: trigger met, price on the right side of the stop, and `rr ≥ 1` towards the target.
+- **ACTIVE**: trigger met and `rr ≥ 1` towards the target.
 - **WATCHING**: anything else (trigger not met, or `rr < 1` towards the target).
 - Past both targets the signal is spent: the panel reads "No setup: both targets passed".
-- **INVALIDATED**: since the last candle close, price touched the stop loss or the invalidation
-  price. It stays so until the next close re-analyses the timeframe.
+- **INVALIDATED**: since the last candle close, price touched the invalidation price. It stays so until the next close re-analyses the timeframe.
 
 ### 5. Position size
 
@@ -139,12 +142,11 @@ Capital (default 1000 USDT) and risk per trade (default 1%, valid 0.1–10%) are
 `localStorage`.
 
 ```
-risk_usd      = capital × risk% / 100
-stop_distance = |entry − SL| / entry
-position_usd  = min(risk_usd / stop_distance, capital)     # 1x: never above capital
+position_usd = capital                    # 1x, always the whole capital
+risk_usd     = capital × risk% / 100      # lost if the stop loss is hit
 ```
 
-When the cap applies, the panel shows the actual risk, below the configured one.
+With the defaults: 1000 USDT, stop 1% from the entry, 10 USDT at risk.
 
 ### 6. Confluence
 

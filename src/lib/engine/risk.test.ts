@@ -2,30 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { positionSize, sanitizeRiskSettings } from './risk.ts';
 
 describe('positionSize', () => {
-  it('sizes the position so the stop loses exactly the risk per trade', () => {
-    // risk 10 USDT; stop distance 40.5 / 140.
-    const p = positionSize({ capital: 1000, riskPercent: 1 }, 140, 99.5);
-    expect(p.positionUsd).toBeCloseTo(10 / (40.5 / 140), 9);
-    expect(p.positionBtc).toBeCloseTo(10 / 40.5, 9);
-    expect(p.actualRiskUsd).toBeCloseTo(10, 9);
-    expect(p.actualRiskPercent).toBeCloseTo(1, 9);
-    expect(p.capped).toBe(false);
+  it('commits the whole capital and risks risk% of it at the stop', () => {
+    const p = positionSize({ capital: 1000, riskPercent: 1 }, 50_000);
+    expect(p).toEqual({ positionUsd: 1000, positionBtc: 0.02, riskUsd: 10, riskPercent: 1 });
   });
 
-  it('sizes a SHORT the same way (stop above entry)', () => {
-    const p = positionSize({ capital: 1000, riskPercent: 1 }, 860, 904.5);
-    expect(p.actualRiskUsd).toBeCloseTo(10, 9);
-    expect(p.capped).toBe(false);
-  });
-
-  it('caps the position at capital and reports the lower actual risk', () => {
-    // risk 100 USDT over a 0.5% stop would need 20,000 USDT.
-    const p = positionSize({ capital: 1000, riskPercent: 10 }, 100, 99.5);
-    expect(p.positionUsd).toBe(1000);
-    expect(p.positionBtc).toBe(10);
-    expect(p.actualRiskUsd).toBeCloseTo(5, 9);
-    expect(p.actualRiskPercent).toBeCloseTo(0.5, 9);
-    expect(p.capped).toBe(true);
+  it('scales the risk with the risk per trade, not the position', () => {
+    const p = positionSize({ capital: 250, riskPercent: 4 }, 100);
+    expect(p).toEqual({ positionUsd: 250, positionBtc: 2.5, riskUsd: 10, riskPercent: 4 });
   });
 });
 

@@ -26,31 +26,30 @@ const EXPECTED: Record<Timeframe, Expected> = {
     pivots: 68,
     primary: { label: '2', direction: 'bearish', confidence: 32.61 },
     alternative: null,
-    primaryLevels: { setup: 'setup1', side: 'SHORT', triggerMet: true, stopLoss: 64401.204, takeProfit1: 61290.58, takeProfit2: 57889.04404 },
+    primaryLevels: { setup: 'setup1', side: 'SHORT', triggerMet: true, takeProfit1: 61290.58, takeProfit2: 57889.04404 },
     alternativeLevels: null,
   },
   '4h': {
     pivots: 66,
     primary: { label: '2', direction: 'bearish', confidence: 83.2 },
     alternative: { label: 'A', direction: 'bearish' },
-    primaryLevels: { setup: 'setup1', side: 'SHORT', triggerMet: true, stopLoss: 66462.67005, takeProfit1: 62062.97, takeProfit2: 57497.09328 },
+    primaryLevels: { setup: 'setup1', side: 'SHORT', triggerMet: true, takeProfit1: 62062.97, takeProfit2: 57497.09328 },
     alternativeLevels: null, // (A): no setup
   },
   '1d': {
     pivots: 162,
     primary: { label: '4', direction: 'bearish', confidence: 100 },
     alternative: { label: '2', direction: 'bearish' },
-    primaryLevels: { setup: 'setup2', side: 'SHORT', triggerMet: false, stopLoss: 80199, takeProfit1: 62006, takeProfit2: 58276.16 },
-    alternativeLevels: { setup: 'setup1', side: 'SHORT', triggerMet: false, stopLoss: 85322.49, takeProfit1: 62006, takeProfit2: 28656.904 },
+    primaryLevels: { setup: 'setup2', side: 'SHORT', triggerMet: false, takeProfit1: 62006, takeProfit2: 58276.16 },
+    alternativeLevels: { setup: 'setup1', side: 'SHORT', triggerMet: false, takeProfit1: 62006, takeProfit2: 28656.904 },
   },
   '1w': { pivots: 185, primary: null, alternative: null, primaryLevels: null, alternativeLevels: null }, // Neutral
 };
 
 const expectLevels = (actual: SignalLevels | null, expected: SignalLevels | null) => {
   if (expected === null) return expect(actual).toBeNull();
-  const { stopLoss, takeProfit1, takeProfit2, ...rest } = expected;
+  const { takeProfit1, takeProfit2, ...rest } = expected;
   expect(actual).toMatchObject(rest);
-  expect(actual!.stopLoss).toBeCloseTo(stopLoss, 4);
   expect(actual!.takeProfit1).toBeCloseTo(takeProfit1, 4);
   expect(actual!.takeProfit2).toBeCloseTo(takeProfit2, 4);
 };

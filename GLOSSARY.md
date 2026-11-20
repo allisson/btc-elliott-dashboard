@@ -124,7 +124,7 @@ The condition a setup measures at candle close that separates an Active signal f
 _Avoid_: condition, entry rule
 
 **Breach**:
-Price crossing a level that kills a scenario or a signal: its invalidation price or its stop loss.
+Price crossing the invalidation price, which kills a scenario and its signal.
 _Avoid_: hit, touch
 
 **Signal**:
@@ -133,17 +133,17 @@ _Avoid_: setup (for the instance), trade, recommendation
 
 **Signal status**:
 Active when the trigger is met and the trade is still worth taking; Watching when a scenario
-exists but entry is not (or no longer) worth it; Invalidated when price breached the stop loss or
-the scenario's invalidation price before the next candle close.
+exists but entry is not (or no longer) worth it; Invalidated when price breached the scenario's
+invalidation price before the next candle close.
 _Avoid_: state, phase
 
 **Risk per trade**:
-The share of the user's capital they accept to lose if a signal's stop loss is hit.
+The share of the user's capital they accept to lose if a signal's stop loss is hit; it places the
+stop loss that far from the entry.
 _Avoid_: risk tolerance, max loss
 
 **Position size**:
-The amount committed to a signal so that hitting its stop loss loses exactly the risk per trade,
-never exceeding the user's capital.
+The amount committed to a signal: always the user's whole capital, 1x.
 _Avoid_: lot, allocation, stake
 
 **Confluence vote**:

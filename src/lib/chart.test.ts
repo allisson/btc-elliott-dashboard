@@ -22,13 +22,13 @@ const signal: Signal = {
   setup: 'setup1',
   side: 'LONG',
   triggerMet: true,
-  stopLoss: 99.5,
   takeProfit1: 200,
   takeProfit2: 301.8,
   timeframe: '1h',
   entry: 150,
-  rr1: 1.0050251256,
-  rr2: 3.0331658291,
+  stopLoss: 148.5,
+  rr1: 50 / 1.5,
+  rr2: 151.8 / 1.5,
   status: 'ACTIVE',
 };
 
@@ -86,7 +86,7 @@ describe('chartModel wave lines and markers', () => {
     expect(m.projectionVisible).toBe(false);
     expect(m.projectedLine).toHaveLength(4); // kept, so the time scale's right edge stays put
     expect(m.projectedMarkers).toEqual([]);
-    expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Entry', 'Stop', 'TP1', 'TP2']);
+    expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Entry', 'Stop', 'Invalidation', 'TP1', 'TP2']);
   });
 
   it('draws nothing but candles on a Neutral timeframe', () => {
@@ -97,26 +97,28 @@ describe('chartModel wave lines and markers', () => {
 });
 
 describe('chartModel price lines', () => {
-  it('draws the four signal lines with R:R in the TP titles', () => {
+  it("draws the signal lines and the scenario's invalidation price, with R:R in the TP titles", () => {
     const m = chartModel(input());
     expect(m.priceLines).toEqual([
       { id: 'entry', price: 150, title: 'ENTRY 1x', color: CHART_COLORS.entry, style: 'solid' },
-      { id: 'stopLoss', price: 99.5, title: 'STOP LOSS', color: CHART_COLORS.stopLoss, style: 'dashed' },
-      { id: 'takeProfit1', price: 200, title: 'TP1 [R:R 1:1.0]', color: CHART_COLORS.takeProfit1, style: 'dashed' },
-      { id: 'takeProfit2', price: 301.8, title: 'TP2 [R:R 1:3.0]', color: CHART_COLORS.takeProfit2, style: 'dotted' },
+      { id: 'stopLoss', price: 148.5, title: 'STOP LOSS', color: CHART_COLORS.stopLoss, style: 'dashed' },
+      { id: 'invalidation', price: bullish.invalidationPrice, title: 'INVALIDATION', color: CHART_COLORS.invalidation, style: 'dashed' },
+      { id: 'takeProfit1', price: 200, title: 'TP1 [R:R 1:33.3]', color: CHART_COLORS.takeProfit1, style: 'dashed' },
+      { id: 'takeProfit2', price: 301.8, title: 'TP2 [R:R 1:101.2]', color: CHART_COLORS.takeProfit2, style: 'dotted' },
     ]);
+    expect(bullish.invalidationPrice).toBe(100);
     expect(m.showLastPriceLine).toBe(false);
-    expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Projected', 'Entry', 'Stop', 'TP1', 'TP2']);
+    expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Projected', 'Entry', 'Stop', 'Invalidation', 'TP1', 'TP2']);
   });
 
   it('drops the line of a target the price already passed', () => {
     const m = chartModel(input({ signal: { ...signal, status: 'WATCHING', rr1: -0.2 } }));
-    expect(m.priceLines.map((l) => l.id)).toEqual(['entry', 'stopLoss', 'takeProfit2']);
-    expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Projected', 'Entry', 'Stop', 'TP2']);
+    expect(m.priceLines.map((l) => l.id)).toEqual(['entry', 'stopLoss', 'invalidation', 'takeProfit2']);
+    expect(m.legend.map((l) => l.label)).toEqual(['Confirmed', 'Projected', 'Entry', 'Stop', 'Invalidation', 'TP2']);
   });
 
   it('keeps the lines for a Watching signal', () => {
-    expect(chartModel(input({ signal: { ...signal, status: 'WATCHING' } })).priceLines).toHaveLength(4);
+    expect(chartModel(input({ signal: { ...signal, status: 'WATCHING' } })).priceLines).toHaveLength(5);
   });
 
   it.each([
