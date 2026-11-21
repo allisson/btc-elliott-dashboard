@@ -104,8 +104,8 @@ All code, identifiers, comments, docs and UI strings are in English.
 | `1w` | 1W | `1w` | 604,800 | 9.5% |
 | `1M` | 1M | `1M` | calendar month | 17% |
 
-The 15m and 1M thresholds are provisional, extrapolated from the ×1.75 step between the others;
-Phase 11 calibrates them on the recorded snapshots. `1M` is the month, never the minute.
+The 15m and 1M thresholds extrapolate the ×1.75 step between the others; Phase 11 checked them on
+the recorded snapshots (roadmap). `1M` is the month, never the minute.
 
 **Candle step.** The candle `n` steps after a candle opening at `t` opens at `t + n × seconds` on
 every timeframe but `1M`, where it opens at 00:00 UTC on the first day of the month `n` months

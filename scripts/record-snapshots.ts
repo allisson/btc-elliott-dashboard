@@ -1,6 +1,7 @@
 // Records raw Binance payloads into src/lib/engine/__fixtures__/binance/ (spec §11, roadmap Phase 6).
 // Run once with `bun scripts/record-snapshots.ts`. Public endpoints only, no API key.
-// The closed-kline WebSocket message waits for the next 1h close, so this can take up to an hour.
+// The closed-kline WebSocket message waits for the next candle close (15m is the shortest), so this can take up to
+// 15 minutes. Recording overwrites every snapshot, so the regression test's expected values must be re-measured.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BINANCE_REST_BASE, BINANCE_WS_BASE, KLINES_LIMIT, SYMBOL, TIMEFRAMES } from '../src/config.ts';

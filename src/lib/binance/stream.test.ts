@@ -106,7 +106,7 @@ describe('connectStream', () => {
   it('opens the §3.3 combined stream and forwards parsed messages', () => {
     const h = harness();
     expect(h.sockets[0].url).toBe(
-      'wss://stream.binance.com:9443/stream?streams=btcusdt@kline_1h/btcusdt@kline_4h/btcusdt@kline_1d/btcusdt@kline_1w/btcusdt@ticker',
+      'wss://stream.binance.com:9443/stream?streams=btcusdt@kline_15m/btcusdt@kline_1h/btcusdt@kline_4h/btcusdt@kline_1d/btcusdt@kline_1w/btcusdt@kline_1M/btcusdt@ticker',
     );
     expect(STREAM_URL).toBe(h.sockets[0].url);
     h.sockets[0].open();

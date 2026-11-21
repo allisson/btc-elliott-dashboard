@@ -8,15 +8,17 @@ export interface TimeframeConfig {
   id: Timeframe;
   label: string;
   interval: string;
-  seconds: number;
+  seconds: number | null; // null = calendar month (1M); see candleStep
   zigzagThreshold: number; // fraction, e.g. 0.018 = 1.8%
 }
 
 export const TIMEFRAMES: readonly TimeframeConfig[] = [
+  { id: '15m', label: '15M', interval: '15m', seconds: 900, zigzagThreshold: 0.01 },
   { id: '1h', label: '1H', interval: '1h', seconds: 3_600, zigzagThreshold: 0.018 },
   { id: '4h', label: '4H', interval: '4h', seconds: 14_400, zigzagThreshold: 0.032 },
   { id: '1d', label: '1D', interval: '1d', seconds: 86_400, zigzagThreshold: 0.055 },
   { id: '1w', label: '1W', interval: '1w', seconds: 604_800, zigzagThreshold: 0.095 },
+  { id: '1M', label: '1M', interval: '1M', seconds: null, zigzagThreshold: 0.17 },
 ];
 
 // §3.2, §3.3
@@ -77,7 +79,7 @@ export const MIN_RR1 = 1;
 export const MIN_SIGNAL_CONFIDENCE = 0.5;
 
 // §8: smallest agreeing group that counts as Mixed Market (Strong = every timeframe agrees)
-export const CONFLUENCE_MIN_MIXED = 2;
+export const CONFLUENCE_MIN_MIXED = 3;
 
 // §9.5, §9.6: decimals shown for each kind of number
 export const DISPLAY_DECIMALS = { price: 2, percent: 2, rr: 1, btc: 5, usdt: 2, confidence: 0 } as const;

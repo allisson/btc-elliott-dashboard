@@ -1,7 +1,7 @@
 // Scenarios (spec §5): Primary/Alternative ranking, confidence, direction, invalidation and thesis.
 // Pure: valid counts in, scenarios out.
 import { DETAIL_DECIMALS, PROJECTION } from '../../config.ts';
-import type { Count, Direction, Scenario, WaveLabel, WavePoint } from '../../types.ts';
+import type { Count, Direction, Scenario, Timeframe, WaveLabel, WavePoint } from '../../types.ts';
 import { isRule2Pending, project } from './projections.ts';
 
 type LastLabel = '2' | '3' | '4' | '5' | 'A' | 'B';
@@ -64,10 +64,10 @@ function toScenario(
   rank: Scenario['rank'],
   confidence: number,
   lastClosedIndex: number,
-  timeframeSeconds: number,
+  timeframe: Timeframe,
 ): Scenario {
   const label = count.lastLabel as LastLabel;
-  const projected = project(count, lastClosedIndex, timeframeSeconds);
+  const projected = project(count, lastClosedIndex, timeframe);
   const { point, reason } = INVALIDATION[label];
   const invalidationPrice = count.points[point].price;
   return {
@@ -87,17 +87,17 @@ function toScenario(
 export function buildScenarios(
   counts: readonly Count[],
   lastClosedIndex: number,
-  timeframeSeconds: number,
+  timeframe: Timeframe,
 ): { primary: Scenario | null; alternative: Scenario | null } {
   const [p, a] = [...counts].sort((x, y) => y.score - x.score || y.points.length - x.points.length);
   if (!p) return { primary: null, alternative: null };
-  if (!a) return { primary: toScenario(p, 'primary', p.score * 100, lastClosedIndex, timeframeSeconds), alternative: null };
+  if (!a) return { primary: toScenario(p, 'primary', p.score * 100, lastClosedIndex, timeframe), alternative: null };
 
   const total = p.score + a.score;
   const primaryConfidence = total > 0 ? (p.score / total) * 100 : 50;
   return {
-    primary: toScenario(p, 'primary', primaryConfidence, lastClosedIndex, timeframeSeconds),
-    alternative: toScenario(a, 'alternative', 100 - primaryConfidence, lastClosedIndex, timeframeSeconds),
+    primary: toScenario(p, 'primary', primaryConfidence, lastClosedIndex, timeframe),
+    alternative: toScenario(a, 'alternative', 100 - primaryConfidence, lastClosedIndex, timeframe),
   };
 }
 

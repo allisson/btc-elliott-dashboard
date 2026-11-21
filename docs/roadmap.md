@@ -165,12 +165,26 @@ resumes.
 - `engine/confluence.ts` (§8) with six votes.
 - REST load, combined stream and backfill on six timeframes (§3.2, §3.3).
 - Header buttons and the confluence strip with six cards in one row (§9.0, §9.2, §9.3).
-- Record the 15m and 1M snapshots and payloads with `bun scripts/record-snapshots.ts`, add them to
-  the regression test (§11), and **calibrate** the provisional 15m and 1M thresholds (§3.1):
-  write the final values into §3.1 and the measured pivots and counts into this file.
+- Record the 15m and 1M kline snapshots (only those two, so the 1h/4h/1d/1w regression keeps its
+  recorded data), add them to the regression test (§11), and **calibrate** the provisional 15m
+  and 1M thresholds (§3.1): write the final values into §3.1 and the measured pivots and counts
+  into this file.
 
 **Done when** the confluence tests cover 6/6 in both directions, 5/6, 3–3 split, 3/6 with
 Neutral, and 2/6; the candle step tests cover a fixed step, month ends and December → January
 for `1M`; the existing 1h/4h/1d/1w snapshot results are unchanged; and, in the browser against
 live Binance, the strip fits one row at 1024 px with no horizontal page scroll at 390 px, and
 focusing 15M and 1M shows their counts or the Neutral overlay.
+
+**Measured** on the 15m and 1M snapshots recorded 2026-11-21 16:32 UTC (closed candles only):
+
+| TF | θ | Closed candles | Pivots | Valid counts (m, score) | Primary | Alternative |
+| :-- | --: | --: | --: | :-- | :-- | :-- |
+| 15m | 1.0% | 999 | 87 | m=4 0.05 | (3) bearish, 5% | unavailable |
+| 1M | 17% | 111 | 41 | m=4 0.45 | (3) bullish, 45% | unavailable |
+
+- Both keep the extrapolated thresholds: each has well over `K + 1 = 9` pivots, at a density close
+  to its neighbour (15m 87 vs 1h 68 per ~1000 candles; 1M 41 of 111 candles ≈ 1w 185 of 483).
+  Picking θ for the count it yields would fit one snapshot, so it was not done.
+- The 1M returns its whole history from 2017-08 (111 closed months). Its analysed close and
+  projected points fall on the first of a month (candle step, §3.1).

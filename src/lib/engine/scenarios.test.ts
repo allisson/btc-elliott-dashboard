@@ -5,7 +5,7 @@ import { project } from './projections.ts';
 import { buildScenarios, isInvalidated } from './scenarios.ts';
 import * as fx from './__fixtures__/counts.ts';
 
-const TF = 3_600;
+const TF = '1h';
 
 const sides = [
   ['bullish', (p: readonly number[]) => fx.pivots('trough', p), (x: number) => x, 'Bullish', 'bearish'],
