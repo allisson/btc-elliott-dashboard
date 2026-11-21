@@ -4,11 +4,14 @@ import type { CandleHistory } from './binance/rest.ts';
 import type { StreamMessage } from './binance/stream.ts';
 import { initialLiveState, liveReducer, pausedSince, type LiveEvent, type LiveState } from './live.ts';
 
-const SECONDS: Record<Timeframe, number> = { '1h': 3_600, '4h': 14_400, '1d': 86_400, '1w': 604_800 };
+const TIMEFRAMES = ['15m', '1h', '4h', '1d', '1w', '1M'] as const;
+const SECONDS: Record<Exclude<Timeframe, '1M'>, number> = { '15m': 900, '1h': 3_600, '4h': 14_400, '1d': 86_400, '1w': 604_800 };
 const T0 = 1_795_000_000 - (1_795_000_000 % 604_800);
+// Candle i's open: fixed steps from T0, or the first of each month from January 2026 on 1M (§3.1).
+const openTime = (tf: Timeframe, i: number) => (tf === '1M' ? Date.UTC(2026, i, 1) / 1000 : T0 + i * SECONDS[tf]);
 
 const candle = (tf: Timeframe, i: number, close = 100 + i): Candle => ({
-  time: T0 + i * SECONDS[tf],
+  time: openTime(tf, i),
   open: close,
   high: close + 1,
   low: close - 1,
@@ -21,7 +24,7 @@ const history = (tf: Timeframe): CandleHistory => ({
   closed: [0, 1, 2, 3, 4].map((i) => candle(tf, i)),
   open: candle(tf, 5),
 });
-const HISTORIES = { '1h': history('1h'), '4h': history('4h'), '1d': history('1d'), '1w': history('1w') };
+const HISTORIES = Object.fromEntries(TIMEFRAMES.map((tf) => [tf, history(tf)])) as Record<Timeframe, CandleHistory>;
 
 const TICKER: Ticker = { price: 105, change24h: 1, changePercent24h: 1, high24h: 110, low24h: 90, volume24h: 10 };
 const kline = (tf: Timeframe, c: Candle, closed: boolean): LiveEvent => ({
@@ -42,15 +45,15 @@ describe('initial load', () => {
     expect(initialLiveState.timeframes).toBeNull();
   });
 
-  it('the REST load analyses all four timeframes and goes live', () => {
+  it('the REST load analyses all six timeframes and goes live', () => {
     const s = ready();
     expect(s.status).toBe('ready');
     expect(s.syncing).toBe(false);
     expect(s.ticker).toEqual(TICKER);
-    for (const tf of ['1h', '4h', '1d', '1w'] as const) {
+    for (const tf of TIMEFRAMES) {
       expect(s.timeframes![tf].closed).toHaveLength(5);
       expect(s.timeframes![tf].open).toEqual(candle(tf, 5));
-      expect(s.timeframes![tf].analysis.analysedAt).toBe(T0 + 5 * SECONDS[tf]);
+      expect(s.timeframes![tf].analysis.analysedAt).toBe(openTime(tf, 5));
     }
     expect(pausedSince(s)).toBeNull();
   });
@@ -75,7 +78,7 @@ describe('initial load', () => {
     expect(h.closed[4].close).toBe(104);
     expect(h.closed[5].high).toBe(201);
     expect(h.open).toEqual(candle('1h', 6));
-    expect(h.analysis.analysedAt).toBe(T0 + 6 * SECONDS['1h']);
+    expect(h.analysis.analysedAt).toBe(openTime('1h', 6));
     expect(s.buffer).toEqual([]);
   });
 
@@ -104,8 +107,8 @@ describe('stream messages when live (§3.3, §6.5)', () => {
     const s = liveReducer(before, kline('1h', candle('1h', 5), true));
     expect(s.timeframes!['1h'].closed).toHaveLength(6);
     expect(s.timeframes!['1h'].open).toBeNull();
-    expect(s.timeframes!['1h'].analysis.analysedAt).toBe(T0 + 6 * SECONDS['1h']);
-    for (const tf of ['4h', '1d', '1w'] as const) expect(s.timeframes![tf]).toBe(before.timeframes![tf]);
+    expect(s.timeframes!['1h'].analysis.analysedAt).toBe(openTime('1h', 6));
+    for (const tf of TIMEFRAMES.filter((t) => t !== '1h')) expect(s.timeframes![tf]).toBe(before.timeframes![tf]);
 
     const next = liveReducer(s, kline('1h', candle('1h', 6), false));
     expect(next.timeframes!['1h'].open).toEqual(candle('1h', 6));

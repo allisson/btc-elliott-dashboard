@@ -29,10 +29,12 @@ export const analysis = (
 
 type Vote = Direction | null;
 
-// Votes in the order 1h, 4h, 1d, 1w.
-export const analyses = ([h1, h4, d1, w1]: [Vote, Vote, Vote, Vote]): Record<Timeframe, TimeframeAnalysis> => ({
+// Votes in the order 15m, 1h, 4h, 1d, 1w, 1M.
+export const analyses = ([m15, h1, h4, d1, w1, mo1]: [Vote, Vote, Vote, Vote, Vote, Vote]): Record<Timeframe, TimeframeAnalysis> => ({
+  '15m': analysis('15m', m15),
   '1h': analysis('1h', h1),
   '4h': analysis('4h', h4),
   '1d': analysis('1d', d1),
   '1w': analysis('1w', w1),
+  '1M': analysis('1M', mo1),
 });

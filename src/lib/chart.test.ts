@@ -11,7 +11,7 @@ const H = 3_600;
 // Pivots at indices 0, 2, 4 (fixture), last closed candle 5, open candle 6.
 const scenarioOf = (prices: readonly number[], mirrored: boolean): Scenario => {
   const list = fx.pivots('trough', prices);
-  return buildScenarios(findCounts(mirrored ? fx.mirror(list) : list), 5, H).primary!;
+  return buildScenarios(findCounts(mirrored ? fx.mirror(list) : list), 5, '1h').primary!;
 };
 const candles: Candle[] = Array.from({ length: 7 }, (_, i) => ({ time: i * H, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
 

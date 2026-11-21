@@ -4,7 +4,8 @@ import { findCounts } from './counts.ts';
 import { isRule2Pending, project } from './projections.ts';
 import * as fx from './__fixtures__/counts.ts';
 
-const TF = 3_600;
+const TF = '1h';
+const H = 3_600;
 
 const sides = [
   ['bullish', (p: readonly number[]) => fx.pivots('trough', p), (x: number) => x],
@@ -67,19 +68,19 @@ describe.each(sides)('project (%s)', (_side, build, map) => {
     const count = countOf(build(fx.BASE.slice(0, 3))); // indices 0, 2, 4: mean leg 2
     const last = count.points[2];
     const times = project(count, last.index! + 1, TF).map((p) => p.time);
-    expect(times).toEqual([last.time + 2 * TF, last.time + 4 * TF, last.time + 6 * TF]);
+    expect(times).toEqual([last.time + 2 * H, last.time + 4 * H, last.time + 6 * H]);
   });
 
   it('pushes the first projected leg past the last closed candle when the wave in progress is older', () => {
     const count = countOf(build(fx.BASE.slice(0, 3)));
     const last = count.points[2];
     const times = project(count, last.index! + 5, TF).map((p) => p.time); // elapsed 5 > mean 2
-    expect(times).toEqual([last.time + 6 * TF, last.time + 8 * TF, last.time + 10 * TF]);
+    expect(times).toEqual([last.time + 6 * H, last.time + 8 * H, last.time + 10 * H]);
   });
 
   it('rounds the mean leg duration', () => {
-    const list = build(fx.BASE.slice(0, 3)).map((p, i) => ({ ...p, index: [0, 2, 5][i], time: [0, 2, 5][i] * TF }));
+    const list = build(fx.BASE.slice(0, 3)).map((p, i) => ({ ...p, index: [0, 2, 5][i], time: [0, 2, 5][i] * H }));
     const count = countOf(list); // mean 2.5 → 3
-    expect(project(count, 6, TF).map((p) => p.time)).toEqual([8 * TF, 11 * TF, 14 * TF]);
+    expect(project(count, 6, TF).map((p) => p.time)).toEqual([8 * H, 11 * H, 14 * H]);
   });
 });

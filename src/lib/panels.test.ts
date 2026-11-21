@@ -18,10 +18,9 @@ import {
   stripCard,
 } from './panels.ts';
 
-const H = 3_600;
 const scenarioOf = (prices: readonly number[], mirrored = false): Scenario => {
   const list = fx.pivots('trough', prices);
-  return buildScenarios(findCounts(mirrored ? fx.mirror(list) : list), 2 * prices.length - 1, H).primary!;
+  return buildScenarios(findCounts(mirrored ? fx.mirror(list) : list), 2 * prices.length - 1, '1h').primary!;
 };
 
 const bullish = scenarioOf(fx.BASE.slice(0, 3)); // (0)(1)(2): Setup 1, invalidation P0 = 100
@@ -165,11 +164,11 @@ describe('stripCard', () => {
 describe('confluenceBadge', () => {
   const c = (agree: number, majority: Confluence['majority'], label: Confluence['label']): Confluence => ({ agree, majority, label });
   it('names the label, the agreement and the majority', () => {
-    expect(confluenceBadge(c(4, 'bullish', 'strong'))).toBe('Strong Confluence · 4/4 bullish');
-    expect(confluenceBadge(c(4, 'bearish', 'strong'))).toBe('Strong Confluence · 4/4 bearish');
-    expect(confluenceBadge(c(3, 'bearish', 'mixed'))).toBe('Mixed Market · 3/4 bearish');
-    expect(confluenceBadge(c(2, 'split', 'mixed'))).toBe('Mixed Market · 2/4 split');
-    expect(confluenceBadge(c(1, null, 'none'))).toBe('No Confluence · 1/4');
+    expect(confluenceBadge(c(6, 'bullish', 'strong'))).toBe('Strong Confluence · 6/6 bullish');
+    expect(confluenceBadge(c(6, 'bearish', 'strong'))).toBe('Strong Confluence · 6/6 bearish');
+    expect(confluenceBadge(c(4, 'bearish', 'mixed'))).toBe('Mixed Market · 4/6 bearish');
+    expect(confluenceBadge(c(3, 'split', 'mixed'))).toBe('Mixed Market · 3/6 split');
+    expect(confluenceBadge(c(2, null, 'none'))).toBe('No Confluence · 2/6');
   });
 });
 

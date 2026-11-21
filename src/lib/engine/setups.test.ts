@@ -18,7 +18,7 @@ const RISK = 1; // % per trade: the stop sits 1% from the entry (§7)
 const lastIndex = (c: Count) => c.points[c.points.length - 1].index!;
 const scenarioFrom = (list: Pivot[]): Scenario => {
   const count = findCounts(list).find((c) => c.points[0].index === list[0].index)!;
-  return buildScenarios([count], lastIndex(count) + 1, 3_600).primary!;
+  return buildScenarios([count], lastIndex(count) + 1, '1h').primary!;
 };
 const candle = (price: number) => ({ high: price, low: price });
 

@@ -1,6 +1,6 @@
 // Domain types: spec §10. Vocabulary follows GLOSSARY.md.
 
-export type Timeframe = '1h' | '4h' | '1d' | '1w';
+export type Timeframe = '15m' | '1h' | '4h' | '1d' | '1w' | '1M';
 export type Direction = 'bullish' | 'bearish';
 export type WaveLabel = '0' | '1' | '2' | '3' | '4' | '5' | 'A' | 'B' | 'C';
 

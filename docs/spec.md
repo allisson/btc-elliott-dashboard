@@ -9,7 +9,7 @@ Decisions that deviate from the obvious path are recorded in [`adr/`](./adr/).
 
 A personal, read-only dashboard for BTC/USDT on Binance. It:
 
-1. Detects pivots with an adaptive ZigZag on four timeframes: 1h, 4h, 1d, 1w.
+1. Detects pivots with an adaptive ZigZag on six timeframes: 15m, 1h, 4h, 1d, 1w, 1M.
 2. Builds Elliott wave counts that end at the latest pivot, scores them against Fibonacci ratios
    and promotes the best two to a **Primary Scenario** and an **Alternative Scenario**.
 3. Projects the waves still to come.
@@ -17,7 +17,7 @@ A personal, read-only dashboard for BTC/USDT on Binance. It:
    status), mirrored for both directions.
 5. Commits the user's whole capital (1x) with the stop loss at the risk per trade from the entry
    (§7, [ADR 0003](adr/0003-stop-loss-at-risk-per-trade.md)).
-6. Summarises the four timeframes into a **Confluence** reading.
+6. Summarises the six timeframes into a **Confluence** reading.
 7. Streams live data from Binance's public REST and WebSocket APIs, with no API key.
 
 The user reads the signal and acts manually. The dashboard never places orders.
@@ -97,15 +97,26 @@ All code, identifiers, comments, docs and UI strings are in English.
 
 | Id | UI label | Binance interval | Seconds | ZigZag threshold |
 | :-- | :-- | :-- | --: | --: |
+| `15m` | 15M | `15m` | 900 | 1.0% |
 | `1h` | 1H | `1h` | 3,600 | 1.8% |
 | `4h` | 4H | `4h` | 14,400 | 3.2% |
 | `1d` | 1D | `1d` | 86,400 | 5.5% |
 | `1w` | 1W | `1w` | 604,800 | 9.5% |
+| `1M` | 1M | `1M` | calendar month | 17% |
+
+The 15m and 1M thresholds extrapolate the ×1.75 step between the others; Phase 11 checked them on
+the recorded snapshots (roadmap). `1M` is the month, never the minute.
+
+**Candle step.** The candle `n` steps after a candle opening at `t` opens at `t + n × seconds` on
+every timeframe but `1M`, where it opens at 00:00 UTC on the first day of the month `n` months
+after `t`'s month (Binance opens monthly candles there). Every candle time derived in this spec
+uses the candle step: projected times (§4.5), the close time of an analysed candle (§10) and the
+chart's future time slots (§9.4).
 
 ### 3.2 REST (history)
 
 - Base URL: `https://api.binance.com/api/v3`.
-- `GET /klines?symbol=BTCUSDT&interval={interval}&limit=1000`, one call per timeframe, all four in
+- `GET /klines?symbol=BTCUSDT&interval={interval}&limit=1000`, one call per timeframe, all six in
   parallel on load.
   - Parse: `[0] openTime` (ms → `/1000` = seconds UTC), `[1] open`, `[2] high`, `[3] low`,
     `[4] close`, `[5] volume`, all as `number`.
@@ -117,7 +128,7 @@ All code, identifiers, comments, docs and UI strings are in English.
 ### 3.3 WebSocket (live)
 
 - One combined connection:
-  `wss://stream.binance.com:9443/stream?streams=btcusdt@kline_1h/btcusdt@kline_4h/btcusdt@kline_1d/btcusdt@kline_1w/btcusdt@ticker`
+  `wss://stream.binance.com:9443/stream?streams=btcusdt@kline_15m/btcusdt@kline_1h/btcusdt@kline_4h/btcusdt@kline_1d/btcusdt@kline_1w/btcusdt@kline_1M/btcusdt@ticker`
 - Kline payload (`data.k`): `t` start time (ms), `o h l c v`, `x` closed flag, `i` interval.
   - `t === lastCandle.time`: replace the open candle.
   - `t > lastCandle.time`: append a new open candle.
@@ -132,7 +143,7 @@ All code, identifiers, comments, docs and UI strings are in English.
   Each ticker update refreshes the header and every price-dependent signal metric (§6.5) without
   recomputing counts.
 - Reconnect: on close or error, retry every 3 s. After reconnecting, refetch the REST klines for
-  all four timeframes (backfill), then re-analyse them. A failed backfill is retried every 3 s
+  all six timeframes (backfill), then re-analyse them. A failed backfill is retried every 3 s
   while the stream stays up.
 - Drop detection: a cut network does not always close the socket. The stream is treated as dropped
   when no message has arrived for `STREAM_STALE_MS` (10 s; the ticker arrives about once a
@@ -144,7 +155,7 @@ Synthetic candles never exist at runtime ([ADR 0002](./adr/0002-no-synthetic-dat
 
 - **Initial REST failure** (network, HTTP 4xx/5xx, rate limit): full-screen error state with the
   first failing endpoint, the HTTP status if any, and a Retry button. No chart, no signals. Retry
-  restarts the whole load: the stream and the five REST calls.
+  restarts the whole load: the stream and the seven REST calls.
 - **WebSocket down** after a successful load: the header badge switches from `LIVE` to `OFFLINE`
   and shows the time of the last real update: the last stream message received, or the REST load
   if none arrived. The chart keeps the last real data. Every signal is hidden and replaced with
@@ -288,8 +299,8 @@ Projected times: the mean leg duration of the confirmed count is
 `(lastPoint.index − firstPoint.index) / (m − 1)` candles, rounded, and at least 1. The first
 projected leg lasts `max(mean, elapsed + 1)` candles, where `elapsed` is the number of closed
 candles since the last point (`lastClosedIndex − lastPoint.index`), so it never lands on a candle
-already past; each later leg lasts the mean. A point `n` candles after the last point has time
-`lastPoint.time + n × timeframeSeconds`.
+already past; each later leg lasts the mean. A point `n` candles after the last point has the
+time `n` candle steps after `lastPoint.time` (§3.1).
 
 ### 4.6 Tunables
 
@@ -471,14 +482,15 @@ marks the count's structure; the scenario's invalidation price does (§5.5, §9.
 
 - Each non-Neutral timeframe votes with its **Primary Scenario's** direction (§5.4). The
   Alternative toggle never changes votes.
-- `agree` = the size of the largest direction group, out of 4.
+- `agree` = the size of the largest direction group, out of 6. Neutral timeframes still count in
+  the 6.
 - Labels:
-  - 4/4: **Strong Confluence** (bullish or bearish).
-  - 3/4: **Mixed Market**, majority direction shown.
-  - 2/4: **Mixed Market**, majority direction shown, or "split" on a 2–2 tie.
-  - 1/4 or 0/4: **No Confluence**; `majority` is `null`, including on a 1–1 tie.
+  - 6/6: **Strong Confluence** (bullish or bearish).
+  - 5/6 or 4/6: **Mixed Market**, majority direction shown.
+  - 3/6: **Mixed Market**, majority direction shown, or "split" on a 3–3 tie.
+  - 2/6 or fewer: **No Confluence**; `majority` is `null`, including on a 2–2 or 1–1 tie.
 - Strong means `agree` equals the number of timeframes; the Mixed floor is
-  `CONFLUENCE_MIN_MIXED` (2) in `config.ts`.
+  `CONFLUENCE_MIN_MIXED` (3) in `config.ts`.
 - Votes are cast at candle close (§6.5): a Primary Scenario breached by the ticker keeps its vote
   until its timeframe's next close.
 - Engine entry point: `confluence(analyses: Record<Timeframe, TimeframeAnalysis>): Confluence`.
@@ -496,11 +508,11 @@ Desktop (`lg`, ≥ 1024 px): one screen, no page scroll.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Header (§9.2): BTC/USDT · price · 24h stats      1H 4H 1D 1W · toggles · LIVE │
-├──────────────┬───────────────┬───────────────┬───────────────┬───────────────┤
-│ Confluence   │ 1H card       │ 4H card       │ 1D card       │ 1W card       │
-│ badge (§8)   │               │               │               │               │
-├──────────────┴───────────────┴───────────────┴──┬────────────────────────────┤
+│ Header (§9.2): BTC/USDT · price · 24h  15M 1H 4H 1D 1W 1M · toggles · LIVE   │
+├──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬────────────┤
+│Confluence│ 15M card │ 1H card  │ 4H card  │ 1D card  │ 1W card  │ 1M card    │
+│badge (§8)│          │          │          │          │          │            │
+├──────────┴──────────┴──────────┴──────────┴─────┬────┴──────────┴────────────┤
 │ Chart context bar: BTC/USDT · TF · scenario ·   │ Signal panel (§9.5)         │
 │ wave in progress · line legend                  │ 380 px (400 px at xl),      │
 ├─────────────────────────────────────────────────┤ scrolls on its own          │
@@ -543,14 +555,15 @@ The page declares `color-scheme: dark`, so native scrollbars and form controls a
   change, 24h change in USDT and %, 24h high and low. The change is signed and coloured bullish or
   bearish, e.g. `-2,265.46 (-3.56%)`; high and low read `H 64,080.00` and `L 61,230.00`. The 24h
   volume is not shown.
-- Right: timeframe buttons `1H 4H 1D 1W`; `Projections` toggle (projected line and future
+- Right: timeframe buttons `15M 1H 4H 1D 1W 1M`; `Projections` toggle (projected line and future
   markers); `Trade 1x` toggle (signal price lines); connection badge (`LIVE` with a pulsing green
   dot, or `OFFLINE · last update HH:mm UTC`).
 
 ### 9.3 Confluence strip
 
-Four cards below the header, one per timeframe, showing the label, direction badge, wave in
-progress, signal status (or `NO SETUP` / `NEUTRAL`) and Primary confidence. Clicking a card
+Six cards below the header, one per timeframe in ascending order and in one row, showing the
+label, direction badge, wave in progress, signal status (or `NO SETUP` / `NEUTRAL`) and Primary
+confidence. Clicking a card
 focuses that timeframe. A confluence badge (§8) sits at the strip's start.
 
 A card always shows its timeframe's **Primary Scenario**, like the confluence vote (§8); the
@@ -660,7 +673,7 @@ A passed target (§6.3) has no line.
 ## 10. Types
 
 ```ts
-export type Timeframe = '1h' | '4h' | '1d' | '1w';
+export type Timeframe = '15m' | '1h' | '4h' | '1d' | '1w' | '1M';
 export type Direction = 'bullish' | 'bearish';
 export type WaveLabel = '0' | '1' | '2' | '3' | '4' | '5' | 'A' | 'B' | 'C';
 
@@ -747,7 +760,7 @@ export interface Signal extends SignalLevels {  // recomputed on every ticker up
 
 export interface TimeframeAnalysis {
   timeframe: Timeframe;
-  analysedAt: number;          // close time of the last analysed candle
+  analysedAt: number;          // close time of the last analysed candle: one candle step after its open (§3.1)
   primary: Scenario | null;    // null = Neutral
   alternative: Scenario | null;
   primaryLevels: SignalLevels | null;
@@ -767,7 +780,7 @@ export interface PositionSize {
 }
 
 export interface Confluence {
-  agree: number;               // 0..4
+  agree: number;               // 0..6
   majority: Direction | 'split' | null;
   label: 'strong' | 'mixed' | 'none';
 }

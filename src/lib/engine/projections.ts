@@ -1,7 +1,8 @@
 // Projections (spec §4.5): the points still to come after a count's last point, with Fibonacci
 // prices and times. Pure: a count and the last closed candle in, projected points out.
 import { PROJECTION } from '../../config.ts';
-import type { Count, WaveLabel, WavePoint } from '../../types.ts';
+import type { Count, Timeframe, WaveLabel, WavePoint } from '../../types.ts';
+import { candleStep } from './candleStep.ts';
 
 interface ProjectedLeg {
   label: WaveLabel;
@@ -73,7 +74,7 @@ function projectPrices(count: Count): ProjectedLeg[] {
 }
 
 // lastClosedIndex: index of the last closed candle, in the same series as the pivots.
-export function project(count: Count, lastClosedIndex: number, timeframeSeconds: number): WavePoint[] {
+export function project(count: Count, lastClosedIndex: number, timeframe: Timeframe): WavePoint[] {
   const first = count.points[0];
   const last = count.points[count.points.length - 1];
   const mean = Math.max(1, Math.round((last.index! - first.index!) / (count.points.length - 1)));
@@ -82,6 +83,6 @@ export function project(count: Count, lastClosedIndex: number, timeframeSeconds:
   let n = 0;
   return projectPrices(count).map((leg, i) => {
     n += i === 0 ? Math.max(mean, elapsed + 1) : mean;
-    return { ...leg, time: last.time + n * timeframeSeconds, index: null, projected: true };
+    return { ...leg, time: candleStep(timeframe, last.time, n), index: null, projected: true };
   });
 }

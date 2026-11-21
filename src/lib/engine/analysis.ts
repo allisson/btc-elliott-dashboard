@@ -1,5 +1,6 @@
 // One timeframe's analysis at candle close (spec §6.5): pivots, counts, scenarios and setup levels. Pure.
 import { TIMEFRAMES } from '../../config.ts';
+import { candleStep } from './candleStep.ts';
 import type { Candle, Timeframe, TimeframeAnalysis } from '../../types.ts';
 import { findCounts } from './counts.ts';
 import { buildScenarios } from './scenarios.ts';
@@ -11,10 +12,10 @@ export function analyseTimeframe(closed: readonly Candle[], timeframe: Timeframe
   const tf = TIMEFRAMES.find((t) => t.id === timeframe)!;
   const lastClosedIndex = closed.length - 1;
   const closes = closed.map((c) => c.close);
-  const { primary, alternative } = buildScenarios(findCounts(zigzag(closed, tf.zigzagThreshold)), lastClosedIndex, tf.seconds);
+  const { primary, alternative } = buildScenarios(findCounts(zigzag(closed, tf.zigzagThreshold)), lastClosedIndex, timeframe);
   return {
     timeframe,
-    analysedAt: closed[lastClosedIndex].time + tf.seconds,
+    analysedAt: candleStep(timeframe, closed[lastClosedIndex].time, 1),
     primary,
     alternative,
     primaryLevels: primary && buildLevels(primary, closes),

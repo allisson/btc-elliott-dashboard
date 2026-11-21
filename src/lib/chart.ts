@@ -2,6 +2,7 @@
 // lines, legend, overlays and the initial visible range. Pure; ElliottChart.tsx only hands it to the chart.
 import { CHART, CHART_COLORS, TIMEFRAMES } from '../config.ts';
 import type { Candle, Scenario, Signal, Timeframe, WavePoint } from '../types.ts';
+import { candleStep } from './engine/candleStep.ts';
 import { formatConfidence, formatRR, pausedNotice } from './format.ts';
 
 export interface ChartInput {
@@ -119,7 +120,7 @@ export function chartModel(input: ChartInput): ChartModel {
   const lastCandleTime = candles[candles.length - 1].time;
   const lastTime = chain.length ? chain[chain.length - 1].time : lastCandleTime;
   const futureTimes: number[] = [];
-  for (let t = lastCandleTime + tf.seconds; t <= lastTime; t += tf.seconds) futureTimes.push(t);
+  for (let t = candleStep(timeframe, lastCandleTime, 1); t <= lastTime; t = candleStep(timeframe, t, 1)) futureTimes.push(t);
 
   const times = [...candles.map((c) => c.time), ...futureTimes];
   const indexOf = (time: number) => times.indexOf(time);

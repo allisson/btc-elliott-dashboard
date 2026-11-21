@@ -36,7 +36,7 @@ export function ConfluenceStrip({ confluence, badge, cards, focused, onFocus }: 
   const [name, detail] = badge.split(' · ');
   return (
     <section className="flex gap-2 overflow-x-auto lg:overflow-visible">
-      <div className="flex min-w-36 shrink-0 flex-col justify-center rounded-md border border-border bg-surface px-3 py-2 lg:flex-1">
+      <div className="flex min-w-36 shrink-0 flex-col justify-center lg:min-w-0 rounded-md border border-border bg-surface px-3 py-2 lg:flex-1">
         <span className="text-[10px] uppercase tracking-wide text-slate-500">Confluence</span>
         <span className={`text-sm font-semibold ${majorityColor(confluence)}`}>{name}</span>
         <span className="text-xs text-slate-400">{detail}</span>
@@ -46,7 +46,7 @@ export function ConfluenceStrip({ confluence, badge, cards, focused, onFocus }: 
           key={timeframe}
           type="button"
           onClick={() => onFocus(timeframe)}
-          className={`flex min-w-44 shrink-0 flex-col gap-1 rounded-md border bg-surface px-3 py-2 text-left lg:flex-1 ${timeframe === focused ? 'border-accent' : 'border-border hover:border-slate-500'}`}
+          className={`flex min-w-44 shrink-0 flex-col gap-1 lg:min-w-0 rounded-md border bg-surface px-3 py-2 text-left lg:flex-1 ${timeframe === focused ? 'border-accent' : 'border-border hover:border-slate-500'}`}
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-semibold">{card.label}</span>
