@@ -33,7 +33,7 @@ Live at **<https://btc-elliott.allisson.dev>**.
 
 | Alternative Scenario | Paused (stream down) |
 | :-- | :-- |
-| ![The Alternative Scenario on 4H: a completed bearish impulse with Wave B in progress and no setup yet](docs/screenshots/alternative.png) | ![Offline: the header reads OFFLINE, the cards read PAUSED and every signal is replaced with "Signals paused"](docs/screenshots/offline.png) |
+| ![The Alternative Scenario on 1D: a bearish count with Wave 3 in progress and its projection, shown with no signal because its confidence is 0%](docs/screenshots/alternative.png) | ![Offline: the header reads OFFLINE, the cards read PAUSED and every signal is replaced with "Signals paused"](docs/screenshots/offline.png) |
 
 <p align="center">
   <img src="docs/screenshots/mobile.png" alt="The dashboard at 390 px: one scrolling column with the header, the confluence strip, the chart and the signal panel" width="300">
