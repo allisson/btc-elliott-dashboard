@@ -1,6 +1,6 @@
 # btc-elliott-dashboard
 
-A personal, read-only BTC/USDT dashboard that counts Elliott waves on four timeframes, ranks the
+A personal, read-only BTC/USDT dashboard that counts Elliott waves on six timeframes, ranks the
 counts into a Primary and an Alternative Scenario, and turns them into 1x (unleveraged) trade
 signals with position sizing and multi-timeframe confluence. Live data comes from Binance's public
 REST and WebSocket APIs, with no API key. It never places orders.
@@ -14,7 +14,7 @@ Live at **<https://btc-elliott.allisson.dev>**.
 
 ## Features
 
-- **Wave counts on 1h, 4h, 1d and 1w**: adaptive ZigZag pivots, every candidate count from the
+- **Wave counts on 15m, 1h, 4h, 1d, 1w and 1M**: adaptive ZigZag pivots, every candidate count from the
   last 8 pivots, checked against the three Elliott rules and scored against Fibonacci ratios.
 - **Primary and Alternative Scenarios**: the two best counts, each with a confidence, the wave in
   progress, projected waves with target ranges, an invalidation price and a one-line thesis.
@@ -23,7 +23,7 @@ Live at **<https://btc-elliott.allisson.dev>**.
   `INVALIDATED` status updated on every tick.
 - **Position sizing**: the whole capital, 1x. The risk per trade sets the stop loss that far from
   the entry, so hitting it loses exactly that share of the capital.
-- **Confluence**: the four timeframes' Primary Scenarios vote on a direction.
+- **Confluence**: the six timeframes' Primary Scenarios vote on a direction.
 - **Live, and honest when it is not**: candles and ticker stream over one WebSocket. When the
   stream drops, signals pause and the header says since when. When it comes back, history is
   refetched before signals resume. No synthetic data ever reaches the screen.
@@ -73,10 +73,12 @@ pivot.
 
 | Timeframe | ZigZag threshold `θ` |
 | :-- | --: |
+| 15m | 1.0% |
 | 1h | 1.8% |
 | 4h | 3.2% |
 | 1d | 5.5% |
 | 1w | 9.5% |
+| 1M | 17% |
 
 ### 2. Counts and rules
 
@@ -154,20 +156,20 @@ With the defaults: 1000 USDT, stop 1% from the entry, 10 USDT at risk.
 
 ### 6. Confluence
 
-Each non-Neutral timeframe votes with its Primary Scenario's direction. 4 of 4 agreeing is
-**Strong Confluence**, 2 or 3 is a **Mixed Market** (or "split" on a 2–2 tie), 1 or none is
+Each non-Neutral timeframe votes with its Primary Scenario's direction. 6 of 6 agreeing is
+**Strong Confluence**, 3 to 5 is a **Mixed Market** (or "split" on a 3–3 tie), 2 or fewer is
 **No Confluence**.
 
 ### Live data and failures
 
-The app opens one combined WebSocket (`kline_1h`, `kline_4h`, `kline_1d`, `kline_1w` and
-`ticker`), then loads 1000 candles per timeframe and the 24h ticker over REST. Klines that arrive
+The app opens one combined WebSocket (`kline_15m`, `kline_1h`, `kline_4h`, `kline_1d`,
+`kline_1w`, `kline_1M` and `ticker`), then loads 1000 candles per timeframe and the 24h ticker over REST. Klines that arrive
 during the load are buffered and applied on top of it, so no candle close is missed.
 
 - **Initial load fails**: a full-screen error with the failing endpoint and a Retry button.
 - **Stream drops** (socket closed, 10 s without a message, or the browser going offline): the
   badge switches to `OFFLINE · last update HH:mm UTC`, the chart keeps the last real data and every
-  signal is replaced with "Signals paused". The stream retries every 3 s; once it is back, all four
+  signal is replaced with "Signals paused". The stream retries every 3 s; once it is back, all six
   timeframes are refetched and re-analysed before signals resume.
 
 ## Project layout

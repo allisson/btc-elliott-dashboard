@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A personal, read-only BTC/USDT dashboard: Elliott wave counts on 1h/4h/1d/1w, Primary and
+A personal, read-only BTC/USDT dashboard: Elliott wave counts on 15m/1h/4h/1d/1w/1M, Primary and
 Alternative scenarios, 1x signals with position sizing, and multi-timeframe confluence. Live data
 comes from Binance's public REST and WebSocket APIs. It never places orders.
 
