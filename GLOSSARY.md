@@ -1,6 +1,6 @@
 # BTC Elliott Dashboard
 
-A personal read-only dashboard for the BTC/USDT pair that counts Elliott waves across four
+A personal read-only dashboard for the BTC/USDT pair that counts Elliott waves across six
 timeframes and turns that reading into unleveraged trade signals.
 
 ## Market data
@@ -152,7 +152,7 @@ vote, and the Alternative Scenario never votes.
 _Avoid_: signal, bias
 
 **Confluence**:
-How many of the four timeframes cast the same confluence vote, counted on the largest group:
-4/4 is Strong Confluence; 3/4 or 2/4 is Mixed Market, with the majority direction or, on a 2–2
-tie, a split; 1/4 or 0/4 is No Confluence, with no majority direction.
+How many of the six timeframes cast the same confluence vote, counted on the largest group:
+6/6 is Strong Confluence; 5/6, 4/6 or 3/6 is Mixed Market, with the majority direction or, on a
+3–3 tie, a split; 2/6 or fewer is No Confluence, with no majority direction.
 _Avoid_: consensus, alignment
